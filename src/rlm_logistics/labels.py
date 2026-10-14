@@ -6,16 +6,16 @@ translation, used for the human audit sheet.
 """
 import json
 import re
-import urllib.request
 
 import pandas as pd
+
+from .llm import LLM
 
 LABELS = ["delivery", "product", "seller_service", "positive", "other"]
 CODES = {"d": "delivery", "p": "product", "s": "seller_service", "g": "positive", "o": "other"}
 CHUNK = 50  # reviews per request
 
-SYSTEM = """You classify Brazilian e-commerce customer reviews (Portuguese) by their MAIN COMPLAINT.
-Labels (code: meaning):
+LABEL_RULES = """Labels (code: meaning):
 - d (delivery): complaint about late, slow, lost or not-received delivery, or damage in transit
 - p (product): complaint about quality, defects, wrong size/colour, not as described, product broke
 - s (seller_service): complaint about the seller: communication, refund, cancellation, wrong or missing items sent, invoice
@@ -28,6 +28,7 @@ Rules:
 4. Neutral but satisfied ("ok", "as expected", "received") -> g.
 5. Complaints about price or shipping cost -> o.
 6. Several complaints (e.g. late AND another problem): choose the one the customer stresses most."""
+SYSTEM = "You classify Brazilian e-commerce customer reviews (Portuguese) by their MAIN COMPLAINT.\n" + LABEL_RULES
 
 
 def schema(translate: bool) -> dict:
@@ -66,17 +67,9 @@ def chunks(df: pd.DataFrame):
 
 def label_ollama(df: pd.DataFrame, model: str = "qwen3:8b", translate: bool = False) -> pd.DataFrame:
     """Free local run, for testing the pipeline on a small sample (slow on CPU)."""
-    rows = []
-    for _, ids, comments in chunks(df):
-        body = {"model": model, "stream": False, "think": False, "format": schema(translate),
-                "options": {"temperature": 0, "num_ctx": 16384},
-                "messages": [{"role": "system", "content": SYSTEM},
-                             {"role": "user", "content": prompt(comments, translate)}]}
-        req = urllib.request.Request("http://localhost:11434/api/chat", json.dumps(body).encode(),
-                                     {"Content-Type": "application/json"})
-        with urllib.request.urlopen(req, timeout=900) as r:
-            rows += parse(json.load(r)["message"]["content"], ids, translate)
-    return pd.DataFrame(rows)
+    llm = LLM("ollama", model, num_ctx=16384)
+    return pd.DataFrame([row for _, ids, comments in chunks(df)
+                         for row in parse(llm.chat(prompt(comments, translate), SYSTEM, schema(translate)).text, ids, translate)])
 
 
 def submit_batch(df: pd.DataFrame, model: str, translate: bool = False) -> str:
