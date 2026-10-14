@@ -47,7 +47,50 @@ def build_orders(t: dict[str, pd.DataFrame]) -> pd.DataFrame:
     df["days_late"] = (df["order_delivered_customer_date"].dt.normalize() - df["order_estimated_delivery_date"]).dt.days
     df["category"] = df["category"].fillna("unknown")
     df["comment"] = df["comment"].str.replace(r"\s+", " ", regex=True).str.strip()
+    # Short ids (O01234, S0567): the 32-character hex ids cost ~20 tokens each; these cost ~3.
+    # Category codes follow the sorted original ids, so the mapping is the same on every run.
+    df["oid"] = "O" + df.order_id.astype("category").cat.codes.astype(str).str.zfill(5)
+    df["sid"] = "S" + df.seller_id.astype("category").cat.codes.astype(str).str.zfill(4)
     return df
+
+
+def claude_token_counter(model: str, max_chars: int = 1_500_000):
+    """Return count(text) using Claude's own tokenizer; long texts are counted in pieces and summed."""
+    import anthropic
+
+    client = anthropic.Anthropic()
+
+    def count(text: str) -> int:
+        pieces, cur = [], ""
+        for line in text.split("\n"):
+            if cur and len(cur) + len(line) > max_chars:
+                pieces.append(cur)
+                cur = ""
+            cur += line + "\n"
+        pieces.append(cur)
+        return sum(client.messages.count_tokens(model=model, messages=[{"role": "user", "content": p}]).input_tokens
+                   for p in pieces)
+    return count
+
+
+def pack(lines: list[str], target: int, count, lo: int = 0) -> int:
+    """Binary search: the largest n such that the first n lines fit within `target` tokens."""
+    hi = len(lines)
+    while lo < hi:
+        mid = (lo + hi + 1) // 2
+        if count("\n".join(lines[:mid])) <= target:
+            lo = mid
+        else:
+            hi = mid - 1
+    return lo
+
+
+def build_contexts(lines: list[str], sizes: list[int], count) -> dict[int, int]:
+    """Nested contexts: each size is a prefix of the shuffled records. Returns {size: n_records}."""
+    n, out = 0, {}
+    for size in sorted(sizes):
+        out[size] = n = pack(lines, size, count, lo=n)
+    return out
 
 
 def serialize(row) -> str:
@@ -55,7 +98,7 @@ def serialize(row) -> str:
     late = row.days_late
     status = f"{late} days late" if late > 0 else "on time" if late == 0 else f"{-late} days early"
     review = f'review={row.review_score:.0f}/5 "{row.comment}"' if pd.notna(row.comment) else "review=none"
-    return (f"[order {row.order_id}] seller={row.seller_id} ({row.seller_state}/{row.seller_city}) "
+    return (f"[order {row.oid}] seller={row.sid} ({row.seller_state}/{row.seller_city}) "
             f"customer={row.customer_state}/{row.customer_city} category={row.category} "
             f"purchased={row.order_purchase_timestamp:%Y-%m-%d} estimated={row.order_estimated_delivery_date:%Y-%m-%d} "
             f"delivered={row.order_delivered_customer_date:%Y-%m-%d} ({status}) {review}")

@@ -5,7 +5,7 @@ from rlm_logistics.data import serialize
 
 def row(days_late, comment="chegou atrasado"):
     return pd.Series({
-        "order_id": "o1", "seller_id": "s1", "seller_state": "SP", "seller_city": "sao paulo",
+        "oid": "O00001", "sid": "S0001", "seller_state": "SP", "seller_city": "sao paulo",
         "customer_state": "RJ", "customer_city": "rio de janeiro", "category": "bed_bath_table",
         "order_purchase_timestamp": pd.Timestamp("2017-11-02"),
         "order_estimated_delivery_date": pd.Timestamp("2017-11-20"),
@@ -16,7 +16,7 @@ def row(days_late, comment="chegou atrasado"):
 
 def test_serialize_late_with_comment():
     s = serialize(row(7))
-    assert s.startswith("[order o1] seller=s1 (SP/sao paulo) customer=RJ/rio de janeiro")
+    assert s.startswith("[order O00001] seller=S0001 (SP/sao paulo) customer=RJ/rio de janeiro")
     assert '(7 days late) review=1/5 "chegou atrasado"' in s
 
 
