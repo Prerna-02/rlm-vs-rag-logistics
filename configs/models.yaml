@@ -1,14 +1,19 @@
-# Model roles. Exact Claude versions and prices are pinned on the day Phase 5 starts.
+# Model roles, read by LLM.from_config(role). price / long_price: $ per 1M (input, output) tokens;
+# long_price applies to prompts above 100K tokens. Exact final versions are pinned before Phase 5.
 dev:
   provider: ollama
   model: qwen3:8b
-  base_url: http://localhost:11434
+  num_ctx: 16384
 dev_backup:
   provider: openrouter
-  model: null        # chosen in Phase 3
+  model: null        # pick a ":free" model if qwen is too slow or weak
 labeler:
   provider: anthropic
-  model: claude-haiku-5-5   # $0.10 / $0.50 per 1M tokens (prompts < 100K), half price via Batch API
+  model: claude-haiku-5-5   # labels were made through the Batch API at half these prices
+  price: [0.10, 0.50]
+  long_price: [0.50, 2.50]
 final:
   provider: anthropic
-  model: null        # pinned before Phase 5 (Claude Haiku 5.5 planned)
+  model: claude-haiku-5-5   # re-checked before Phase 5
+  price: [0.10, 0.50]
+  long_price: [0.50, 2.50]
