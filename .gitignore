@@ -16,3 +16,7 @@ data/processed/context_*.txt
 data/processed/records.csv
 data/processed/embeddings_*.npy
 results/dev/
+
+# personal spending record and run logs
+results/spend.jsonl
+results/grid_log.txt
