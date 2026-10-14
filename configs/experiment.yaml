@@ -1,0 +1,8 @@
+# Experiment grid. Filled in further in Phases 2-5.
+seed: 42
+context_sizes: [32000, 128000, 512000]   # tokens; plus a small extra set at ~2M
+extra_size: 2000000
+tiers: [T1_lookup, T2_aggregation, T3_pairwise]
+questions_per_tier_per_size: 6
+methods: [direct_llm, rag_bm25, rag_hybrid, rlm_depth0, rlm_depth1, rlm_depth2]
+budget_usd_per_run: 5.0

@@ -1,0 +1,14 @@
+# Model roles. Exact Claude versions and prices are pinned on the day Phase 5 starts.
+dev:
+  provider: ollama
+  model: qwen3:8b
+  base_url: http://localhost:11434
+dev_backup:
+  provider: openrouter
+  model: null        # chosen in Phase 3
+labeler:
+  provider: anthropic
+  model: null        # Claude Haiku, pinned before Phase 2 labeling
+final:
+  provider: anthropic
+  model: null        # Claude Haiku, pinned before Phase 5

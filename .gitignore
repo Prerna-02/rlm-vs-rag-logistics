@@ -1,0 +1,12 @@
+# secrets
+.env
+kaggle.json
+
+# data (downloaded by scripts/download_data.py)
+data/raw/
+
+# python
+__pycache__/
+*.pyc
+.venv/
+.ipynb_checkpoints/
