@@ -21,7 +21,13 @@ Labels (code: meaning):
 - s (seller_service): complaint about the seller: communication, refund, cancellation, wrong or missing items sent, invoice
 - g (positive): praise or satisfaction with no real complaint, even if it mentions fast delivery or a good product
 - o (other): anything else, or too vague to tell
-If a review has several complaints, choose the one the customer stresses most."""
+Rules:
+1. Never arrived / not received -> d, even if the seller also did not reply.
+2. Wrong item, missing items or wrong quantity sent -> s.
+3. Arrived broken or defective -> p.
+4. Neutral but satisfied ("ok", "as expected", "received") -> g.
+5. Complaints about price or shipping cost -> o.
+6. Several complaints (e.g. late AND another problem): choose the one the customer stresses most."""
 
 
 def schema(translate: bool) -> dict:

@@ -1,0 +1,22 @@
+{
+  "32k": {
+    "target_tokens": 32000,
+    "n_records": 269,
+    "tokens": 31961
+  },
+  "128k": {
+    "target_tokens": 128000,
+    "n_records": 1083,
+    "tokens": 127891
+  },
+  "512k": {
+    "target_tokens": 512000,
+    "n_records": 4351,
+    "tokens": 511949
+  },
+  "2m": {
+    "target_tokens": 2000000,
+    "n_records": 17030,
+    "tokens": 1999879
+  }
+}

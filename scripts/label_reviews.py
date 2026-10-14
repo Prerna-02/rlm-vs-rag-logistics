@@ -18,6 +18,7 @@ from rlm_logistics.labels import collect_batch, submit_batch
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "data" / "labels"
 STATE = OUT / "batches.json"
+SHEET = OUT / "audit_sheet.csv"
 AUDIT_N, SEED = 200, 42
 
 if __name__ == "__main__":
@@ -28,7 +29,10 @@ if __name__ == "__main__":
     OUT.mkdir(parents=True, exist_ok=True)
 
     if sys.argv[1] == "submit":
-        ids = {"labels": submit_batch(reviews, model), "audit": submit_batch(audit, model, translate=True)}
+        ids = json.loads(STATE.read_text()) if STATE.exists() else {}
+        ids["labels"] = submit_batch(reviews, model)
+        if not SHEET.exists():  # translations are only needed once
+            ids["audit"] = submit_batch(audit, model, translate=True)
         STATE.write_text(json.dumps(ids, indent=2))
         print(ids)
     else:
@@ -36,8 +40,10 @@ if __name__ == "__main__":
         labels = collect_batch(ids["labels"], reviews)
         labels.to_csv(OUT / "labels.csv", index=False)
         print(f"{len(labels):,} of {len(reviews):,} reviews labeled\n{labels.label.value_counts()}")
+        if SHEET.exists():  # never overwrite a filled-in audit
+            sys.exit()
         # Blind sheet: the human sees the review and translation, NOT the LLM label.
         sheet = collect_batch(ids["audit"], audit, translate=True).merge(audit[["order_id", "review_score", "comment"]], on="order_id")
         sheet[["order_id", "review_score", "comment", "english"]].assign(human_label="").to_csv(
-            OUT / "audit_sheet.csv", index=False, encoding="utf-8-sig")
+            SHEET, index=False, encoding="utf-8-sig")
         print(f"audit sheet: {len(sheet)} rows -> fill the human_label column")
