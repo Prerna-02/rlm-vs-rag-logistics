@@ -32,6 +32,13 @@ def rag(question: str, llm: LLM, lines: list[str], retriever, n: int, k: int = 2
     return llm.chat(f"Records (the {k} most relevant out of {n}):\n{hits}\n\nQuestion: {question}", SYSTEM)
 
 
+def rlm(question: str, llm: LLM, context: str, depth: int, sub: LLM | None = None) -> Reply:
+    """RLM: the context stays in a REPL variable; the model reads it through code (and sub-calls)."""
+    from .rlm import RLM
+
+    return RLM(llm, sub, depth).answer(question, context)
+
+
 def logged(method: str, out: Path = RUNS) -> dict[str, dict]:
     """Runs already saved for this method, by question id (lets an interrupted grid resume)."""
     path = out / f"{method}.jsonl"
@@ -51,6 +58,11 @@ def run(method: str, q: dict, ask: Callable[[], Reply], model: str, out: Path = 
            "input_tokens": reply.input_tokens, "output_tokens": reply.output_tokens,
            "cost": reply.cost, "seconds": round(reply.seconds, 1)}
     out.mkdir(parents=True, exist_ok=True)
+    if reply.trace is not None:
+        row["steps"], row["sub_calls"] = len(reply.trace), sum(len(t["sub_calls"]) for t in reply.trace)
+        traces = out / "trajectories" / method  # dev runs stay under results/dev (not committed)
+        traces.mkdir(parents=True, exist_ok=True)
+        (traces / f"{q['id']}.json").write_text(json.dumps(reply.trace, ensure_ascii=False, indent=1), encoding="utf-8")
     with open(out / f"{method}.jsonl", "a", encoding="utf-8") as f:
         f.write(json.dumps(row, ensure_ascii=False) + "\n")
     return row

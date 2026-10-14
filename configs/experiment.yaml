@@ -5,4 +5,9 @@ extra_size: 2000000
 tiers: [T1_lookup, T2_aggregation, T3_pairwise]
 questions_per_tier_per_size: 6
 methods: [direct_llm, rag_bm25, rag_hybrid, rlm_depth0, rlm_depth1, rlm_depth2]
-budget_usd_per_run: 5.0
+budget_usd_per_run: 0.50   # one RLM run stops its sub-calls past this (the overall cap is BUDGET_USD in .env)
+rlm:
+  max_iterations: 12          # root model turns per question
+  max_sub_calls: 60
+  code_timeout_s: 60          # per executed code block
+  output_chars: 4000          # REPL output shown back to the root model

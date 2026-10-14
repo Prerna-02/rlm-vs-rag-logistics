@@ -20,6 +20,7 @@ class Reply:
     output_tokens: int
     cost: float
     seconds: float
+    trace: list | None = None  # RLM only: every step (code, output, sub-calls)
 
 
 def post_json(url: str, body: dict, headers: dict | None = None, timeout: int = 3600) -> dict:
@@ -30,19 +31,25 @@ def post_json(url: str, body: dict, headers: dict | None = None, timeout: int = 
 
 class LLM:
     def __init__(self, provider: str, model: str, price=(0, 0), long_price=None, num_ctx: int = 8192,
-                 base_url: str = "http://localhost:11434"):
+                 base_url: str = "http://localhost:11434", budget=None):
         self.provider, self.model, self.num_ctx, self.base_url = provider, model, num_ctx, base_url
+        self.budget = budget  # a Budget: checked before and charged after every paid call
         self.price, self.long_price = price, long_price or price  # $ per 1M (input, output) tokens
 
     @classmethod
-    def from_config(cls, role: str) -> "LLM":
-        return cls(**yaml.safe_load(CONFIG.read_text())[role])
+    def from_config(cls, role: str, budget=None) -> "LLM":
+        return cls(**yaml.safe_load(CONFIG.read_text())[role], budget=budget)
 
     def chat(self, prompt: str, system: str = "", schema: dict | None = None, max_tokens: int = 4000) -> Reply:
+        if self.budget and self.provider != "ollama":
+            self.budget.check()
         start = time.time()
         text, tin, tout = getattr(self, f"_{self.provider}")(prompt, system, schema, max_tokens)
         p_in, p_out = self.long_price if tin > LONG_PROMPT else self.price
-        return Reply(text, tin, tout, (tin * p_in + tout * p_out) / 1e6, time.time() - start)
+        reply = Reply(text, tin, tout, (tin * p_in + tout * p_out) / 1e6, time.time() - start)
+        if self.budget:
+            self.budget.charge(reply.cost, self.model)
+        return reply
 
     def _ollama(self, prompt, system, schema, max_tokens):
         r = post_json(f"{self.base_url}/api/chat", {
