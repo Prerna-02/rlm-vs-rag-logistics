@@ -2,9 +2,9 @@
 
 Benchmarking **Recursive Language Models (RLM)** against **RAG** and **direct LLM calls** on real e-commerce delivery data, to find out when RLM wins and what it costs.
 
-> **Scope:** the data is Brazilian e-commerce *last-mile delivery* (Olist), not freight or port logistics.
+**Live results:** <https://rlm-vs-rag-logistics-demo.vercel.app> · **Report:** [`report/report.md`](report/report.md) ([PDF](report/report.pdf))
 
-**Status:** Phases 1-5 done (setup, benchmark, baselines, RLM, experiments). Phase 6 (demo site and report) next.
+> **Scope:** the data is Brazilian e-commerce *last-mile delivery* (Olist), not freight or port logistics.
 
 ## Headline results
 
@@ -22,7 +22,7 @@ Benchmarking **Recursive Language Models (RLM)** against **RAG** and **direct LL
 * **Finding one record:** RAG is as accurate as anything and the cheapest.
 * **Counting or comparing across all records:** RAG and direct LLM collapse; RLM keeps most of its accuracy as the context grows.
 * **One level of sub-calls is the sweet spot:** depth 2 barely improves on depth 1 at ~10× the median cost.
-* Full analysis, failure taxonomy and limitations: [`notebooks/09_analysis.ipynb`](notebooks/09_analysis.ipynb).
+* Full analysis, failure taxonomy and limitations: [`notebooks/09_analysis.ipynb`](notebooks/09_analysis.ipynb) and the [report](report/report.md).
 
 ![Accuracy vs context size](report/figures/accuracy_vs_size.png)
 ![Cost vs accuracy](report/figures/cost_vs_accuracy.png)
@@ -44,6 +44,14 @@ Open `notebooks/` in VS Code and pick the `.venv` kernel. Notebook 07 needs Jupy
 
 ## Reproducing the results
 
+The answer key can be rebuilt from the raw data with no API calls:
+
+```bash
+uv run python scripts/verify_answer_key.py      # rebuilds all 59 questions and answers; checks they match
+```
+
+Re-running the paid steps:
+
 ```bash
 uv run python scripts/label_reviews.py submit    # then `collect`: the answer key labels (Batch API)
 uv run python scripts/run_grid.py --dry-run      # cost estimate for the experiment grid
@@ -51,6 +59,7 @@ uv run python scripts/run_grid.py                # every method x question; resu
 ```
 
 Every paid call goes through a hard spending cap (`BUDGET_USD` in `.env`). Results land in `results/runs/` (one JSON line per run, plus RLM trajectories) and `results/metrics.csv`.
+`uv run python scripts/build_demo.py` refreshes the site data in `demo/` (a static site, deployed on Vercel from `main`).
 
 ## Notebooks
 
