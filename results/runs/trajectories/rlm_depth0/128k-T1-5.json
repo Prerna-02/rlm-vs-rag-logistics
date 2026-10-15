@@ -1,0 +1,16 @@
+[
+ {
+  "step": 0,
+  "response": "<invoke name=\"none\">\n</invoke>\n```repl\nimport re\nlines = context.split(\"\\n\")\nhits = [l for l in lines if \"O93841\" in l]\nprint(hits)\n```\n\n\n<invoke name=\"none\">\n</invoke>\n",
+  "outputs": [
+   "['[order O93841] seller=S0584 (PR/curitiba) customer=DF/brasilia category=fashion_bags_accessories purchased=2017-12-04 estimated=2018-01-09 delivered=2017-12-13 (27 days early) review=1/5 \"ja é a segunda vez que peço esta carteira e não me entregam\"']\n"
+  ],
+  "sub_calls": []
+ },
+ {
+  "step": 1,
+  "response": "The record for O93841 has the review: \"ja é a segunda vez que peço esta carteira e não me entregam\", which means \"this is the second time I order this wallet and they don't deliver it to me.\" That is a non-delivery complaint, so rule 1 applies and it is labelled delivery. The record's delivered date conflicts with the comment, but the label follows the review text.\n\nFINAL(delivery)",
+  "outputs": [],
+  "sub_calls": []
+ }
+]

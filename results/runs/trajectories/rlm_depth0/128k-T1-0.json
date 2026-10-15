@@ -1,0 +1,22 @@
+[
+ {
+  "step": 0,
+  "response": "print(context[:500])\nimport re\nm=[l for l in context.split('\\n') if 'O93789' in l or '93789' in l]\nprint(m)\n```\n\n\nprint(context[:500])\nimport re\nm=[l for l in context.split('\\n') if '93789' in l]\nprint(m)",
+  "outputs": [],
+  "sub_calls": []
+ },
+ {
+  "step": 1,
+  "response": "```repl\nprint(context[:500])\nimport re\nm=[l for l in context.split('\\n') if '93789' in l]\nprint(m)\n```",
+  "outputs": [
+   "[order O58113] seller=S1642 (SC/blumenau) customer=SP/valinhos category=computers_accessories purchased=2018-02-21 estimated=2018-03-16 delivered=2018-03-09 (7 days early) review=3/5 \"Satisfeito\"\n[order O29877] seller=S0911 (SP/jacarei) customer=ES/vila velha category=electronics purchased=2018-01-16 estimated=2018-02-09 delivered=2018-02-17 (8 days late) review=1/5 \"Alem do prazo de entrega bem extenso a mercadoria ainda encontra-se retida, sem atualização, completando hoje exatamente 30 dias q\n['[order O93789] seller=S1277 (SP/sao joaquim da barra) customer=SP/sao paulo category=sports_leisure purchased=2018-01-31 estimated=2018-02-23 delivered=2018-02-05 (18 days early) review=3/5 \"Foi entregue antes no prazo, mas comprei 2 produtos da mesma distribuidora, cobraram 2 fretes e entregaram em dias diferentes.\"']\n"
+  ],
+  "sub_calls": []
+ },
+ {
+  "step": 2,
+  "response": "The review for O93789 praises the early delivery but complains that two products from the same distributor were charged two freight fees and arrived on different days. The main complaint is the double shipping charge, which rule 5 classes as \"other\" (shipping cost).\n\nFINAL(other)",
+  "outputs": [],
+  "sub_calls": []
+ }
+]

@@ -1,0 +1,16 @@
+[
+ {
+  "step": 0,
+  "response": "<br>\n```repl\nimport re\nm = [l for l in context.split('\\n') if 'O69836' in l or '69836' in l]\nprint(m)\n```",
+  "outputs": [
+   "['[order O69836] seller=S0207 (PR/maringa) customer=RJ/nilopolis category=electronics purchased=2017-11-19 estimated=2017-12-12 delivered=2017-12-05 (7 days early) review=4/5 \"O produto atende as maiorias das configurações originais, sendo que a função memória não funciona como deveria.\"']\n"
+  ],
+  "sub_calls": []
+ },
+ {
+  "step": 1,
+  "response": "The order's review says the product meets most of the original specifications, but its memory function does not work as it should. That is a complaint about the product not working properly, so it falls under product.\n\nFINAL(product)",
+  "outputs": [],
+  "sub_calls": []
+ }
+]

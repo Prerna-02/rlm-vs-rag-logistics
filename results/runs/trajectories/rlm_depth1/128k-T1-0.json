@@ -1,0 +1,17 @@
+[
+ {
+  "step": 0,
+  "response": "<br>\n```repl\nimport re\nm = [l for l in context.split('\\n') if 'O93789' in l or '93789' in l]\nprint(m)\n```\n\n\n<br>\n```repl\nprint(m)\n```",
+  "outputs": [
+   "['[order O93789] seller=S1277 (SP/sao joaquim da barra) customer=SP/sao paulo category=sports_leisure purchased=2018-01-31 estimated=2018-02-23 delivered=2018-02-05 (18 days early) review=3/5 \"Foi entregue antes no prazo, mas comprei 2 produtos da mesma distribuidora, cobraram 2 fretes e entregaram em dias diferentes.\"']\n",
+   "['[order O93789] seller=S1277 (SP/sao joaquim da barra) customer=SP/sao paulo category=sports_leisure purchased=2018-01-31 estimated=2018-02-23 delivered=2018-02-05 (18 days early) review=3/5 \"Foi entregue antes no prazo, mas comprei 2 produtos da mesma distribuidora, cobraram 2 fretes e entregaram em dias diferentes.\"']\n"
+  ],
+  "sub_calls": []
+ },
+ {
+  "step": 1,
+  "response": "The review praises the early delivery but complains that two freight charges were applied for two products from the same distributor, delivered on different days. The main complaint is the shipping cost, which rule 5 maps to \"other\".\n\nFINAL(other)",
+  "outputs": [],
+  "sub_calls": []
+ }
+]

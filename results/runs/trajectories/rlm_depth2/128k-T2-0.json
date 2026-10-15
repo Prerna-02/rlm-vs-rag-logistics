@@ -1,0 +1,50 @@
+[
+ {
+  "step": 0,
+  "response": "\n<repl\nprint(context[:1500])\nimport re\nlines=context.split('\\n')\nprint(len(lines))\nprint(lines[5])\n</repl>\n",
+  "outputs": [],
+  "sub_calls": []
+ },
+ {
+  "step": 1,
+  "response": "```repl\nprint(context[:1500])\nlines=context.split('\\n')\nprint(len(lines))\nprint(lines[5])\n```",
+  "outputs": [
+   "[order O58113] seller=S1642 (SC/blumenau) customer=SP/valinhos category=computers_accessories purchased=2018-02-21 estimated=2018-03-16 delivered=2018-03-09 (7 days early) review=3/5 \"Satisfeito\"\n[order O29877] seller=S0911 (SP/jacarei) customer=ES/vila velha category=electronics purchased=2018-01-16 estimated=2018-02-09 delivered=2018-02-17 (8 days late) review=1/5 \"Alem do prazo de entrega bem extenso a mercadoria ainda encontra-se retida, sem atualização, completando hoje exatamente 30 dias que comprei a mercadoria.\"\n[order O68116] seller=S2852 (PR/curitiba) customer=SP/sao paulo category=garden_tools purchased=2018-03-27 estimated=2018-04-18 delivered=2018-03-31 (18 days early) review=5/5 \"otimo\"\n[order O12336] seller=S1324 (PR/rolandia) customer=ES/vitoria category=computers_accessories purchased=2018-02-11 estimated=2018-03-28 delivered=2018-02-26 (30 days early) review=1/5 \"Comprei um produto e recebi outro. A targaryen não apresenta solução para o problema. Precisei fazer reclamação no site reclame aqui, mas ainda não obtive retorno. targaryene: sinônimo de aborrecimento.\"\n[order O83462] seller=S2524 (SP/piracicaba) customer=SP/varzea paulista category=bed_bath_table purchased=2017-11-04 estimated=2017-11-27 delivered=2017-11-13 (14 days early) review=5/5 \"Produto bom. Entrega antes do prazo\"\n[order O29553] seller=S0625 (SP/dracena) customer=SP/sao paulo category=consoles_games purchased=2017-12-22 estimated=2018-01-18 delivered=2018-01-11 (7 days early) review=5/5 \"R\n1083\n[order O29553] seller=S0625 (SP/dracena) customer=SP/sao paulo category=consoles_games purchased=2017-12-22 estimated=2018-01-18 delivered=2018-01-11 (7 days early) review=5/5 \"Recebi antes do prazo...o produto é de excelente qualidade!\"\n"
+  ],
+  "sub_calls": []
+ },
+ {
+  "step": 2,
+  "response": "\n<\n<parameter name=\"code\">\nimport re\nrecs=[l for l in context.split('\\n') if l.startswith('[order')]\nlate=[l for l in recs if re.search(r'\\(\\d+ days? late\\)',l)]\nprint(len(recs),len(late))\nprint(sum(1 for l in recs if 'days early' in l or 'on time' in l.lower()))\nprint(set(re.findall(r'\\(([^)]*)\\)\\s+review',l)[0].split()[-1] for l in recs if re.search(r'\\(',l) and 'review' in l)) \n</parameter>\n</invoke>\n",
+  "outputs": [],
+  "sub_calls": []
+ },
+ {
+  "step": 3,
+  "response": "```repl\nimport re\nrecs=[l for l in context.split('\\n') if l.startswith('[order')]\nlate=[l for l in recs if re.search(r'\\(\\d+ days? late\\)',l)]\nprint(len(recs),len(late))\nprint(sum(1 for l in recs if 'days early' in l), sum(1 for l in recs if 'on time' in l))\nprint(late[0][:300])\n```",
+  "outputs": [
+   "1083 97\n973 13\n[order O29877] seller=S0911 (SP/jacarei) customer=ES/vila velha category=electronics purchased=2018-01-16 estimated=2018-02-09 delivered=2018-02-17 (8 days late) review=1/5 \"Alem do prazo de entrega bem extenso a mercadoria ainda encontra-se retida, sem atualização, completando hoje exatamente 30 di\n"
+  ],
+  "sub_calls": []
+ },
+ {
+  "step": 4,
+  "response": "The \"days late\" records are the denominator. I'll have the model label the review of each of the 97 late orders, then compute the share labelled d.\n\n```repl\nimport re\nrecs=[l for l in context.split('\\n') if l.startswith('[order')]\nlate=[l for l in recs if re.search(r'\\(\\d+ days? late\\)',l)]\nprint(len(late))\nprompt = \"\"\"Classify each order review below with one label: d (delivery complaint: late, slow, lost, not received, damaged in transit), p (product complaint: quality, defect, wrong size/colour, not as described, broke), s (seller service: communication, refund, cancellation, wrong or missing items, invoice), g (positive: praise/satisfaction without real complaint), o (other/vague/price/shipping cost).\nRules: never arrived -> d. Wrong/missing item -> s. Arrived broken/defective -> p. Several complaints: pick the one stressed most.\nAnswer with one line per record in the form: <number> <label>. Nothing else.\n\n\"\"\" + \"\\n\".join(f\"{i+1}. {l}\" for i,l in enumerate(late))\nans = llm_query(prompt)\nlabels = re.findall(r'^\\s*(\\d+)\\s*[\\.:\\-\\)]?\\s*([dpsgo])\\b', ans, re.M)\nd = {int(n):lab for n,lab in labels}\nprint(len(d))\ncnt = sum(1 for i in range(1,len(late)+1) if d.get(i)=='d')\nprint(cnt, len(late), round(100*cnt/len(late),1))\nprint(ans[:800])\n```",
+  "outputs": [
+   "97\n97\n72 97 74.2\n1 d\n2 d\n3 d\n4 d\n5 g\n6 d\n7 d\n8 p\n9 s\n10 d\n11 d\n12 d\n13 d\n14 g\n15 d\n16 d\n17 d\n18 s\n19 d\n20 d\n21 s\n22 g\n23 d\n24 d\n25 g\n26 d\n27 d\n28 d\n29 d\n30 d\n31 d\n32 d\n33 d\n34 d\n35 d\n36 d\n37 d\n38 d\n39 d\n40 d\n41 d\n42 d\n43 d\n44 d\n45 g\n46 d\n47 d\n48 d\n49 d\n50 s\n51 d\n52 g\n53 d\n54 o\n55 d\n56 g\n57 d\n58 s\n59 d\n60 g\n61 g\n62 d\n63 d\n64 s\n65 g\n66 d\n67 d\n68 p\n69 d\n70 o\n71 d\n72 d\n73 d\n74 s\n75 d\n76 g\n77 d\n78 d\n79 d\n80 g\n81 d\n82 d\n83 d\n84 d\n85 s\n86 p\n87 d\n88 d\n89 d\n90 d\n91 d\n92 d\n93 d\n94 d\n95 d\n96 d\n97 d\n"
+  ],
+  "sub_calls": [
+   {
+    "prompt_chars": 26562,
+    "reply": "ANSWER: 1 d\n2 d\n3 d\n4 d\n5 g\n6 d\n7 d\n8 p\n9 s\n10 d\n11 d\n12 d\n13 d\n14 g\n15 d\n16 d\n17 d\n18 s\n19 d\n20 d\n21 s\n22 g\n23 d\n24 d\n25 g\n26 d\n27 d\n28 d\n29 d\n30 d\n31 d\n32 d\n33 d\n34 d\n35 d\n36 d\n37 d\n38 d\n39 d\n40 d\n41 d\n42 d\n43 d\n44 d\n45 g\n46 d\n47 d\n48 d\n49 d\n50 s\n51 d\n52 g\n53 d\n54 o\n55 d\n56 g\n57 d\n58 s\n59 d\n60 g\n61 g\n62 d\n63 d\n64 s\n65 g\n66 d\n67 d\n68 p\n69 d\n70 o\n71 d\n72 d\n73 d\n74 s\n75 d\n76 g\n77 d\n78 d\n79 d\n80 g\n81 d\n82 d\n83 d\n84 d\n85 s\n86 p\n87 d\n88 d\n89 d\n90 d\n91 d\n92 d\n93 d\n94 d\n95 d\n96 d\n97 d",
+    "cost": 0.0040349
+   }
+  ]
+ },
+ {
+  "step": 5,
+  "response": "Of the 97 orders delivered after the estimated date, 72 reviews are labelled as delivery complaints, which gives 72 / 97 = 74.2%.\n\nThe 97 late orders were identified by their \"(N days late)\" tag. The reviews were labelled by the language model using the rules you gave, so the 74.2% depends on those labels being accurate.\n\nFINAL(74.2)",
+  "outputs": [],
+  "sub_calls": []
+ }
+]

@@ -1,0 +1,24 @@
+[
+ {
+  "step": 0,
+  "response": "I'll start by inspecting the format of the records.\n\n```repl\nprint(context[:1500])\nprint(context.count('\\n'))\n```",
+  "outputs": [
+   "[order O58113] seller=S1642 (SC/blumenau) customer=SP/valinhos category=computers_accessories purchased=2018-02-21 estimated=2018-03-16 delivered=2018-03-09 (7 days early) review=3/5 \"Satisfeito\"\n[order O29877] seller=S0911 (SP/jacarei) customer=ES/vila velha category=electronics purchased=2018-01-16 estimated=2018-02-09 delivered=2018-02-17 (8 days late) review=1/5 \"Alem do prazo de entrega bem extenso a mercadoria ainda encontra-se retida, sem atualização, completando hoje exatamente 30 dias que comprei a mercadoria.\"\n[order O68116] seller=S2852 (PR/curitiba) customer=SP/sao paulo category=garden_tools purchased=2018-03-27 estimated=2018-04-18 delivered=2018-03-31 (18 days early) review=5/5 \"otimo\"\n[order O12336] seller=S1324 (PR/rolandia) customer=ES/vitoria category=computers_accessories purchased=2018-02-11 estimated=2018-03-28 delivered=2018-02-26 (30 days early) review=1/5 \"Comprei um produto e recebi outro. A targaryen não apresenta solução para o problema. Precisei fazer reclamação no site reclame aqui, mas ainda não obtive retorno. targaryene: sinônimo de aborrecimento.\"\n[order O83462] seller=S2524 (SP/piracicaba) customer=SP/varzea paulista category=bed_bath_table purchased=2017-11-04 estimated=2017-11-27 delivered=2017-11-13 (14 days early) review=5/5 \"Produto bom. Entrega antes do prazo\"\n[order O29553] seller=S0625 (SP/dracena) customer=SP/sao paulo category=consoles_games purchased=2017-12-22 estimated=2018-01-18 delivered=2018-01-11 (7 days early) review=5/5 \"R\n4350\n"
+  ],
+  "sub_calls": []
+ },
+ {
+  "step": 1,
+  "response": "The records have a consistent format, so I'll parse them and first look at the late orders whose customer is in CE.\n\n```repl\nimport re\npat = re.compile(r'^\\[order (\\S+)\\] seller=(\\S+) \\((.*?)\\) customer=(\\S+?)/(.*?) category=(\\S+) purchased=\\S+ estimated=\\S+ delivered=\\S+ \\((.*?)\\) review=(\\d)/5 \"(.*)\"$', re.M)\nrecs = pat.findall(context)\nprint(len(recs), context.count('\\n'))\nce = [r for r in recs if r[3]=='CE' and 'late' in r[6]]\nprint(len(ce))\nfor r in ce[:60]:\n    print(r[0], r[5], r[6], r[7], r[8][:150])\n```",
+  "outputs": [
+   "4351 4350\n13\nO14083 auto 3 days late 3 So queria receber meu produto mais nao chegou ainda\nO03687 health_beauty 52 days late 1 Não recebi a mercadoria e não tive retorno do stark. Péssimo suporte.\nO41920 bed_bath_table 12 days late 1 vou terminar de pagar a mercadoria e não recebi, muito insatisfeito com a compra.\nO06142 health_beauty 10 days late 1 Produto não entregue\nO14269 computers_accessories 10 days late 1 Não indico pra ninguem, já venceu o prazo e não me deram nenhuma satisfação\nO61168 sports_leisure 9 days late 1 tem que ter um mínimo de atenção ao cliente\nO54885 toys 9 days late 1 AINDA NAO RECEBI O PRODUTO.\nO24697 telephony 16 days late 1 Não sei por que ainda não recebi minha mercadoria...\nO49799 telephony 17 days late 1 A venda não se encerra no ato do pagamento. Após este momento não temos mais nenhum contato po parte da loja, é como se o cliente não existisse.\nO64710 perfumery 10 days late 1 O PRODUTO NÃO FOI ENTREGUE, GOSTARIA DE SABER COMO VAI FICAR AGORA?\nO11652 sports_leisure 31 days late 1 O produto ainda não chegou\nO33600 health_beauty 4 days late 1 Os correios tá uma bosta mesmo. O vendedor não deve ter culpa.\nO53572 auto 6 days late 1 Ainda não recebemos o produto\n"
+  ],
+  "sub_calls": []
+ },
+ {
+  "step": 2,
+  "response": "I found 13 late orders with customer state CE. I labelled them by reading the Portuguese comments, since there is no language model in the REPL. Within each category, the pairs that mix a delivery complaint with a non-delivery one are:\n\n- **sports_leisure:** O11652 (\"ainda não chegou\", still not arrived) is a delivery complaint. O61168 (\"tem que ter um mínimo de atenção ao cliente\", complains about the seller's customer service) is not.\n- **telephony:** O24697 (\"não recebi minha mercadoria\", not received) is a delivery complaint. O49799 (no contact from the store after payment) is not.\n\nThe other categories are all delivery complaints or have only one order, so they contribute no pairs.\n\nFINAL([[\"O61168\",\"O11652\"],[\"O49799\",\"O24697\"]])",
+  "outputs": [],
+  "sub_calls": []
+ }
+]

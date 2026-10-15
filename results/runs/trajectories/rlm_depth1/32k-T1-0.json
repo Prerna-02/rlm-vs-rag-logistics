@@ -1,0 +1,16 @@
+[
+ {
+  "step": 0,
+  "response": "<invoke name=\"llm_query\">\n<parameter name=\"prompt\">placeholder</parameter>\n</invoke>\n_fail\n\n\n```repl\nimport re\nm = [l for l in context.split('\\n') if 'O39999' in l]\nprint(m)\n```",
+  "outputs": [
+   "['[order O39999] seller=S1293 (SP/guarulhos) customer=RJ/teresopolis category=stationery purchased=2017-12-20 estimated=2018-01-16 delivered=2018-01-09 (7 days early) review=3/5 \"Poderia ter chegado antes!!!!\"']\n"
+  ],
+  "sub_calls": []
+ },
+ {
+  "step": 1,
+  "response": "The only record for O39999 has the review \"Poderia ter chegado antes!!!!\" (\"Could have arrived earlier!!!!\"), with a 3/5 score. The customer is complaining about delivery timing, even though the order arrived 7 days ahead of the estimate. That makes it a delivery complaint under the labels.\n\nFINAL(delivery)",
+  "outputs": [],
+  "sub_calls": []
+ }
+]

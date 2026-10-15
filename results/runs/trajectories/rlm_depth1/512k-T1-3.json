@@ -1,0 +1,16 @@
+[
+ {
+  "step": 0,
+  "response": "<parameter name=\"x\">print(1)</parameter>\n</invoke>\nWait, I should use the REPL block format. Let me look at the data first.\n\n```repl\nimport re\nlines = context.split(\"\\n\")\nhits = [l for l in lines if l.startswith(\"[O05830]\") or \"O05830\" in l[:20]]\nprint(hits)\n```",
+  "outputs": [
+   "['[order O05830] seller=S1562 (SP/sao paulo) customer=RN/natal category=toys purchased=2017-11-17 estimated=2017-12-13 delivered=2017-12-15 (2 days late) review=1/5 \"Trinta dias pra receber um produto e ainda não chegaram todos E vcs deram 17 dias Falta de compromisso\"']\n"
+  ],
+  "sub_calls": []
+ },
+ {
+  "step": 1,
+  "response": "The review for O05830 says it took thirty days to receive the product, that not everything has arrived yet, and that the estimate of 17 days was not respected. The main complaint is about items not arriving, which falls under the delivery label (rule 1).\n\nFINAL(delivery)",
+  "outputs": [],
+  "sub_calls": []
+ }
+]

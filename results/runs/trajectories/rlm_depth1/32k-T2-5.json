@@ -1,0 +1,58 @@
+[
+ {
+  "step": 0,
+  "response": "I'll start by inspecting the format of the records.\n\n```repl\nprint(context[:1500])\nlines = context.strip().split('\\n')\nprint(len(lines))\nprint(lines[0])\nprint(lines[1])\n```",
+  "outputs": [
+   "[order O58113] seller=S1642 (SC/blumenau) customer=SP/valinhos category=computers_accessories purchased=2018-02-21 estimated=2018-03-16 delivered=2018-03-09 (7 days early) review=3/5 \"Satisfeito\"\n[order O29877] seller=S0911 (SP/jacarei) customer=ES/vila velha category=electronics purchased=2018-01-16 estimated=2018-02-09 delivered=2018-02-17 (8 days late) review=1/5 \"Alem do prazo de entrega bem extenso a mercadoria ainda encontra-se retida, sem atualização, completando hoje exatamente 30 dias que comprei a mercadoria.\"\n[order O68116] seller=S2852 (PR/curitiba) customer=SP/sao paulo category=garden_tools purchased=2018-03-27 estimated=2018-04-18 delivered=2018-03-31 (18 days early) review=5/5 \"otimo\"\n[order O12336] seller=S1324 (PR/rolandia) customer=ES/vitoria category=computers_accessories purchased=2018-02-11 estimated=2018-03-28 delivered=2018-02-26 (30 days early) review=1/5 \"Comprei um produto e recebi outro. A targaryen não apresenta solução para o problema. Precisei fazer reclamação no site reclame aqui, mas ainda não obtive retorno. targaryene: sinônimo de aborrecimento.\"\n[order O83462] seller=S2524 (SP/piracicaba) customer=SP/varzea paulista category=bed_bath_table purchased=2017-11-04 estimated=2017-11-27 delivered=2017-11-13 (14 days early) review=5/5 \"Produto bom. Entrega antes do prazo\"\n[order O29553] seller=S0625 (SP/dracena) customer=SP/sao paulo category=consoles_games purchased=2017-12-22 estimated=2018-01-18 delivered=2018-01-11 (7 days early) review=5/5 \"R\n269\n[order O58113] seller=S1642 (SC/blumenau) customer=SP/valinhos category=computers_accessories purchased=2018-02-21 estimated=2018-03-16 delivered=2018-03-09 (7 days early) review=3/5 \"Satisfeito\"\n[order O29877] seller=S0911 (SP/jacarei) customer=ES/vila velha category=electronics purchased=2018-01-16 estimated=2018-02-09 delivered=2018-02-17 (8 days late) review=1/5 \"Alem do prazo de entrega bem extenso a mercadoria ainda encontra-se retida, sem atualização, completando hoje exatamente 30 dias que comprei a mercadoria.\"\n"
+  ],
+  "sub_calls": []
+ },
+ {
+  "step": 1,
+  "response": "I'll parse each record, keep the cross-state orders, and check how many there are before classifying the comments.\n\n```repl\nimport re\nrecs = []\npat = re.compile(r'\\[order (\\S+)\\] seller=(\\S+) \\((\\w+)/[^)]*\\) customer=(\\w+)/.*? review=(\\d)/5 \"(.*)\"\\s*$')\nbad = 0\nfor ln in lines:\n    m = pat.search(ln)\n    if not m:\n        bad += 1\n        continue\n    oid, sid, sst, cst, score, com = m.groups()\n    recs.append(dict(oid=oid, sst=sst, cst=cst, score=int(score), com=com))\ncross = [r for r in recs if r['sst'] != r['cst']]\nprint(len(recs), bad, len(cross))\nfor r in cross[:3]: print(r)\n```",
+  "outputs": [
+   "269 0 168\n{'oid': 'O58113', 'sst': 'SC', 'cst': 'SP', 'score': 3, 'com': 'Satisfeito'}\n{'oid': 'O29877', 'sst': 'SP', 'cst': 'ES', 'score': 1, 'com': 'Alem do prazo de entrega bem extenso a mercadoria ainda encontra-se retida, sem atualização, completando hoje exatamente 30 dias que comprei a mercadoria.'}\n{'oid': 'O68116', 'sst': 'PR', 'cst': 'SP', 'score': 5, 'com': 'otimo'}\n"
+  ],
+  "sub_calls": []
+ },
+ {
+  "step": 2,
+  "response": "I parsed all 269 records and found 168 cross-state orders. Next I'll have the language model label each of those comments with the five categories, in chunks.\n\n```repl\nimport json\nlabels = {}\ndef classify(chunk):\n    items = \"\\n\".join(f\"{i}: {r['com']}\" for i, r in enumerate(chunk))\n    prompt = (\"Classify each numbered customer review comment (Portuguese) into one label:\\n\"\n              \"d = delivery complaint (late, slow, lost, not received, damaged in transit)\\n\"\n              \"p = product complaint (quality, defect, wrong size/colour, not as described, broke)\\n\"\n              \"s = seller service complaint (communication, refund, cancellation, wrong or missing items sent, invoice)\\n\"\n              \"g = positive/satisfied, no real complaint\\n\"\n              \"o = other, vague, or price/shipping cost complaint\\n\"\n              \"Answer only lines in the form 'number: label', one per line.\\n\\n\" + items)\n    out = llm_query(prompt)\n    res = {}\n    for line in out.splitlines():\n        m = re.match(r'\\s*(\\d+)\\s*[:.)-]\\s*([dpsgo])\\b', line.strip())\n        if m:\n            res[int(m.group(1))] = m.group(2)\n    return res\nfor start in range(0, len(cross), 40):\n    chunk = cross[start:start+40]\n    res = classify(chunk)\n    for i, r in enumerate(chunk):\n        labels[r['oid']] = res.get(i, 'o')\nfrom collections import Counter\nprint(Counter(labels.values()), len(labels))\n```",
+  "outputs": [
+   "Counter({'g': 93, 'd': 27, 's': 22, 'p': 20, 'o': 6}) 168\n"
+  ],
+  "sub_calls": [
+   {
+    "prompt_chars": 3620,
+    "reply": "0: g\n1: d\n2: g\n3: s\n4: d\n5: d\n6: s\n7: g\n8: g\n9: g\n10: g\n11: g\n12: p\n13: g\n14: g\n15: s\n16: g\n17: g\n18: g\n19: g\n20: d\n21: p\n22: s\n23: p\n24: d\n25: g\n26: p\n27: g\n28: s\n29: g\n30: p\n31: g\n32: g\n33: g\n34: g\n35: p\n36: g\n37: g\n38: d\n39: g",
+    "cost": 0.0005671000000000001
+   },
+   {
+    "prompt_chars": 3397,
+    "reply": "0: p\n1: g\n2: g\n3: p\n4: g\n5: g\n6: p\n7: g\n8: g\n9: g\n10: s\n11: s\n12: g\n13: s\n14: g\n15: s\n16: d\n17: g\n18: d\n19: d\n20: g\n21: g\n22: g\n23: s\n24: o\n25: g\n26: p\n27: g\n28: g\n29: g\n30: o\n31: g\n32: g\n33: g\n34: g\n35: g\n36: d\n37: d\n38: g\n39: g",
+    "cost": 0.0005984
+   },
+   {
+    "prompt_chars": 3751,
+    "reply": "0: g\n1: g\n2: g\n3: d\n4: d\n5: p\n6: g\n7: s\n8: d\n9: d\n10: g\n11: g\n12: p\n13: o\n14: s\n15: g\n16: g\n17: g\n18: s\n19: s\n20: d\n21: g\n22: g\n23: g\n24: d\n25: g\n26: g\n27: g\n28: g\n29: s\n30: s\n31: g\n32: d\n33: p\n34: g\n35: o\n36: d\n37: d\n38: d\n39: g",
+    "cost": 0.0007633
+   },
+   {
+    "prompt_chars": 3859,
+    "reply": "0: g\n1: s\n2: g\n3: g\n4: g\n5: g\n6: g\n7: g\n8: d\n9: s\n10: g\n11: g\n12: g\n13: o\n14: d\n15: g\n16: s\n17: g\n18: g\n19: g\n20: d\n21: p\n22: p\n23: p\n24: p\n25: d\n26: g\n27: g\n28: g\n29: o\n30: s\n31: g\n32: g\n33: s\n34: g\n35: d\n36: p\n37: g\n38: s\n39: p",
+    "cost": 0.0005342000000000001
+   },
+   {
+    "prompt_chars": 1128,
+    "reply": "0: g\n1: g\n2: g\n3: g\n4: p\n5: d\n6: g\n7: g",
+    "cost": 0.00016869999999999998
+   }
+  ]
+ },
+ {
+  "step": 3,
+  "response": "I parsed all 269 records and kept the 168 where seller and customer states differ. The language model labelled each comment, giving 27 delivery complaints (d). That makes 27/168 ≈ 16.07%, which rounds to 16.1%.\n\nFINAL(16.1)",
+  "outputs": [],
+  "sub_calls": []
+ }
+]

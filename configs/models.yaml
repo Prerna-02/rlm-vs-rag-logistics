@@ -14,6 +14,7 @@ labeler:
   long_price: [0.50, 2.50]
 final:
   provider: anthropic
-  model: claude-haiku-5-5   # re-checked before Phase 5
+  model: claude-haiku-5-5   # pinned 2026-10-15 for the Phase 5 grid
+  num_ctx: 50000            # largest prompt an RLM sub-call may send (~90K characters, ~360 records)
   price: [0.10, 0.50]
   long_price: [0.50, 2.50]

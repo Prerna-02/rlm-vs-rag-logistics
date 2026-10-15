@@ -54,7 +54,7 @@ def run(method: str, q: dict, ask: Callable[[], Reply], model: str, out: Path = 
         return row
     reply = ask()
     row = {"id": q["id"], "size": q["size"], "tier": q["tier"], "method": method, "model": model,
-           "score": score(q["answer_type"], reply.text, q["answer"]), "reply": reply.text,
+           "score": score(q["answer_type"], reply.text, q["answer"], q.get("n")), "reply": reply.text,
            "input_tokens": reply.input_tokens, "output_tokens": reply.output_tokens,
            "cost": reply.cost, "seconds": round(reply.seconds, 1)}
     out.mkdir(parents=True, exist_ok=True)

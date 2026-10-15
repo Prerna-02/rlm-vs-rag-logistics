@@ -1,0 +1,38 @@
+[
+ {
+  "step": 0,
+  "response": "\n<regex\nimport re\nprint(context[:1200])\nlines = context.strip().split('\\n')\nprint(len(lines))\nprint(lines[5])\n```\n\n\n<regex\nprint(sum('delivered' in l for l in lines))\nprint(re.findall(r'\\((?:delivered|[^)]*)\\)', lines[0]))\nprint(lines[0][:400])\n```",
+  "outputs": [],
+  "sub_calls": []
+ },
+ {
+  "step": 1,
+  "response": "```repl\nprint(context[:1200])\nlines = context.strip().split('\\n')\nprint(len(lines))\nprint(lines[5])\n```",
+  "outputs": [
+   "[order O58113] seller=S1642 (SC/blumenau) customer=SP/valinhos category=computers_accessories purchased=2018-02-21 estimated=2018-03-16 delivered=2018-03-09 (7 days early) review=3/5 \"Satisfeito\"\n[order O29877] seller=S0911 (SP/jacarei) customer=ES/vila velha category=electronics purchased=2018-01-16 estimated=2018-02-09 delivered=2018-02-17 (8 days late) review=1/5 \"Alem do prazo de entrega bem extenso a mercadoria ainda encontra-se retida, sem atualização, completando hoje exatamente 30 dias que comprei a mercadoria.\"\n[order O68116] seller=S2852 (PR/curitiba) customer=SP/sao paulo category=garden_tools purchased=2018-03-27 estimated=2018-04-18 delivered=2018-03-31 (18 days early) review=5/5 \"otimo\"\n[order O12336] seller=S1324 (PR/rolandia) customer=ES/vitoria category=computers_accessories purchased=2018-02-11 estimated=2018-03-28 delivered=2018-02-26 (30 days early) review=1/5 \"Comprei um produto e recebi outro. A targaryen não apresenta solução para o problema. Precisei fazer reclamação no site reclame aqui, mas ainda não obtive retorno. targaryene: sinônimo de aborrecimento.\"\n[order O83462] seller=S2524 (SP/piracicaba) customer=SP/varzea paulista category=bed_bath_table purcha\n269\n[order O29553] seller=S0625 (SP/dracena) customer=SP/sao paulo category=consoles_games purchased=2017-12-22 estimated=2018-01-18 delivered=2018-01-11 (7 days early) review=5/5 \"Recebi antes do prazo...o produto é de excelente qualidade!\"\n"
+  ],
+  "sub_calls": []
+ },
+ {
+  "step": 2,
+  "response": "I'll filter to orders marked \"days late\", then have the model label the comments for those orders.\n\n```repl\nimport re\nlate = [l for l in lines if re.search(r'\\(\\d+ days late\\)', l)]\nprint(len(late))\nprint(sum(1 for l in lines if 'days late' in l or 'late' in l))\nprint(sum(1 for l in lines if 'days early' in l or 'on time' in l.lower()))\n```",
+  "outputs": [
+   "29\n29\n240\n"
+  ],
+  "sub_calls": []
+ },
+ {
+  "step": 3,
+  "response": "There are 29 orders marked \"days late\", and the \"late\" substring count also gives 29, so nothing is missed. Next I'll print their review comments so I can label them.\n\n```repl\nlate = [l for l in lines if 'days late' in l]\nfor l in late:\n    print(l.split('review=')[1][:220])\n    print('---')\n```",
+  "outputs": [
+   "1/5 \"Alem do prazo de entrega bem extenso a mercadoria ainda encontra-se retida, sem atualização, completando hoje exatamente 30 dias que comprei a mercadoria.\"\n---\n1/5 \"Ate o presente momento não recebi o produto,estava com o prazo de entrega dia 03/02/2018, estou no aguardo , e poderiam ser mais eficientes.\"\n---\n1/5 \"Não recebi o produto.e agora?\"\n---\n1/5 \"Muito demorado para enviar o produto, e que até agora não chegou.\"\n---\n5/5 \"o produto foi entregue no prazo e veio do jeito que eu pedi recomendo sim\"\n---\n1/5 \"Não recebi o produto e empresa informa que recebi.\"\n---\n1/5 \"meu produto não chegou!!!!!!!!\"\n---\n1/5 \"nao recomendo pq nem se quer me perguntaram a cor dos ursinhos na hora da comprar cliquei no rosa e veio azul .e agora dinheiro posto fora pois estou gravida de menina\"\n---\n1/5 \"Confiei no site pra nada,pois era presente de uma criança e agora,por enquanto não recomendo devido a falta de compromisso\"\n---\n1/5 \"não me entregou no prazo cancelei a compra.\"\n---\n1/5 \"Péssimo o procedimento. Vergonha. Nada entregue até agora. Absurdo e descaso com cliente.\"\n---\n1/5 \"Comprei dia 24/11 prazo para entrega até o dia 15/12. O prazo venceu há dois dias e o produto está no Correio de Belo Horizonte -MG, ou seja, ainda vai demorar vários dias para ser entregue. Nota zero\"\n---\n5/5 \"Muito bom produto..so atrasou por fato da greve dos caminhoneiros..\"\n---\n5/5 \"Gostei muito. Chegou no prazo informado!!\"\n---\n1/5 \"Nao recebi o produto\"\n---\n1/5 \"comunico que o produto acima mencionado ainda não chegou em minha residência.\"\n---\n1/5 \"Até o momento o produto não foi entregue. Não recomendo a ninguém comprar pela stark. E não adianta colocar a culpa no péssimo serviço que os Correios vem prestando. Precisa ter outros transportes\"\n---\n1/5 \"Falta de respeito com o consumidor,primeira e última vez q compro neste site\"\n---\n1/5 \"Entregaram os produtos, mas, Não cumpriram o prazo de entrega passou do prazo.\"\n---\n1/5 \"Tive problema com a retirada do produto no correio. Assim o produto voltou a loja e estou aguardando se irão reenviar novamente.\"\n---\n1/5 \"Na impossibilidade da entrega ou do produto, penso ser no mínimo necessário um feedback.\"\n---\n5/5 \"Protudo chegou em ótimo estado de conservação, e antes do prazo!\"\n---\n2/5 \"pois era pra entregar previsão para dia 03/04/2018 já esta quase chegando a fatura e o produto não chegou ate hoje , nunca comprei um produto pela internet pra demorar desse tanto.\"\n---\n1/5 \"pedido efetuado e pago em 06/08/2018, e ainda não entregue\"\n---\n5/5 \"Foi ótima o atendimento sem comparação muito bem atendido nota 10 pra empresa muito obrigado pelo atendimento no geral Bom Natal e feliz ano Novo\"\n---\n1/5 \"Um absurdo!Sempre comprei no site das lannister...nunca tive problema,mais essa última compra está fazendo vergonha...apesar de dar um prazo enorme para entrega q foi quase dois meses ainda não chega\"\n---\n1/5 \"Gostaria de saber pq o produto não foi entregue. Gostaria de uma solução\"\n---\n1/5 \"Estou muito insatisfeito com essa loja targaryen, já paguei o pelo produto e o mesmo não foi entregue no prazo, quero que entregue meu produto com urgência!!! Espero que a targaryen e stark resolvam isso.\"\n---\n1/5 \"Prazo de entrega ultrapassado e nada do produto ou qualquer e-mail a respeito falando sobre o atraso e sua razão.\"\n---\n"
+  ],
+  "sub_calls": []
+ },
+ {
+  "step": 4,
+  "response": "Of the 29 orders marked \"days late\", 21 reviews are delivery complaints, which is 72.4%. I labelled the 29 comments by reading them, not with the model. Eight were not delivery complaints: four praised the product or service (including one that mentions a strike-related delay), one was a wrong colour (p), one was vague (o), and the other two were praise or vague complaints.\n\nFINAL(72.4)",
+  "outputs": [],
+  "sub_calls": []
+ }
+]

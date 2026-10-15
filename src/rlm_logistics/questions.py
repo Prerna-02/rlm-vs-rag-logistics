@@ -48,7 +48,7 @@ def t2(ctx: pd.DataFrame, n: int) -> list:
         ("orders where the seller and customer are in different states", ctx.seller_state != ctx.customer_state, "delivery"),
     ]
     return [(f"Among {desc}, what percentage of reviews count as {KIND[label]}? Answer with a number rounded to one decimal.",
-             round(100 * (ctx[mask].label == label).mean(), 1), "number")
+             round(100 * (ctx[mask].label == label).mean(), 1), "number", int(mask.sum()))
             for desc, mask, label in specs[:n]]
 
 
@@ -77,5 +77,6 @@ def build_questions(contexts: dict[str, pd.DataFrame], n: dict[str, int], seed: 
     for name, ctx in contexts.items():
         for tier, qs in [("T1", t1(ctx, n[name], seed)), ("T2", t2(ctx, n[name])), ("T3", t3(ctx, n[name]))]:
             rows += [{"id": f"{name}-{tier}-{i}", "size": name, "tier": tier, "question": qu, "answer": ans,
-                      "answer_type": kind} for i, (qu, ans, kind) in enumerate(qs)]
+                      "answer_type": kind, "n": rest[0] if rest else None}  # n: orders a T2 percentage is over
+                     for i, (qu, ans, kind, *rest) in enumerate(qs)]
     return pd.DataFrame(rows)
