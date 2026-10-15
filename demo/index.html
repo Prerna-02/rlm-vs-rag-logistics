@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>RLM vs RAG Benchmark</title>
+  <meta name="description" content="Recursive Language Models vs RAG vs direct LLM calls on real e-commerce delivery data: 297 runs on Claude Haiku 5.5.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%232a78d6'/><path d='M9 22V10h7a4 4 0 0 1 0 8H9m7 0 5 4' stroke='white' stroke-width='2.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>">
+</head>
+<body>
+  <div class="aurora" aria-hidden="true"><span></span><span></span><span></span></div>
+
+  <header class="nav">
+    <a class="brand" href="#top">RLM <span>vs</span> RAG</a>
+    <nav>
+      <a href="#methods">Methods</a>
+      <a href="#leaderboard">Leaderboard</a>
+      <a href="#scaling">Scaling</a>
+      <a href="#cost">Cost</a>
+      <a href="#trajectory">Trajectories</a>
+      <a href="#findings">Findings</a>
+    </nav>
+    <button class="theme" id="theme" aria-label="Toggle light or dark theme"></button>
+  </header>
+
+  <main id="top">
+    <section class="hero">
+      <p class="eyebrow">Benchmark · Claude Haiku 5.5 · Olist e-commerce data</p>
+      <h1>When does a <em>Recursive Language Model</em> beat RAG?</h1>
+      <p class="lede">Six ways to answer questions about up to <strong>2 million tokens</strong> of real delivery records and
+        Portuguese customer reviews: retrieve a few records, read everything at once, or let the model
+        <strong>write code</strong> to explore the data.</p>
+      <div class="stats">
+        <div class="stat reveal"><b data-count="297">0</b><span>runs</span></div>
+        <div class="stat reveal"><b data-count="6">0</b><span>methods</span></div>
+        <div class="stat reveal"><b data-count="59">0</b><span>questions</span></div>
+        <div class="stat reveal"><b data-count="17030">0</b><span>orders in the largest context</span></div>
+      </div>
+      <a class="cta" href="#leaderboard">See the results</a>
+    </section>
+
+    <section id="methods" class="section">
+      <h2 class="reveal">Three ways to read a huge text</h2>
+      <div class="cards">
+        <article class="card reveal">
+          <div class="icon rag" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
+          <h3>RAG</h3>
+          <p>Search the records, keep the <b>20 most relevant</b>, answer from those. Two search engines:
+            <b>BM25</b> (exact words) and <b>hybrid</b> (words + meaning via embeddings).</p>
+          <p class="tag">Fast, cheap · blind to everything it didn't retrieve</p>
+        </article>
+        <article class="card reveal">
+          <div class="icon direct" aria-hidden="true"><i></i></div>
+          <h3>Direct LLM</h3>
+          <p>Paste the <b>entire context</b> into one prompt and ask. The simplest approach, and the one hit hardest by
+            <b>context rot</b>: accuracy drops as the prompt grows.</p>
+          <p class="tag">Sees everything · expensive · max 1M tokens</p>
+        </article>
+        <article class="card reveal">
+          <div class="icon rlm" aria-hidden="true"><code>&gt;_</code></div>
+          <h3>RLM</h3>
+          <p>The context lives in a <b>Python variable</b>. The model writes code to explore it and, at depth 1+,
+            calls a <b>helper model</b> on slices (e.g. "label these 300 reviews").</p>
+          <p class="tag">Reads everything in pieces · cost varies</p>
+        </article>
+      </div>
+      <div class="tiers reveal">
+        <div><b>T1 · Lookup</b><span>"What did order X complain about?" One record matters.</span></div>
+        <div><b>T2 · Aggregation</b><span>"What % of late orders blame delivery?" Every matching record matters.</span></div>
+        <div><b>T3 · Pairwise</b><span>"List order pairs from the same city with opposite complaints." Pairs of records matter.</span></div>
+      </div>
+    </section>
+
+    <section id="leaderboard" class="section">
+      <h2 class="reveal">Leaderboard</h2>
+      <p class="sub reveal">Mean score per question type (1.00 = always right; T3 = F1 of the pair list). Click a column to sort.</p>
+      <div class="table-wrap reveal">
+        <table id="board">
+          <thead><tr>
+            <th data-k="method">Method</th><th data-k="T1">T1 lookup</th><th data-k="T2">T2 aggregation</th>
+            <th data-k="T3">T3 pairwise</th><th data-k="cost_median">Median $ / question</th><th data-k="seconds_median">Median time</th>
+          </tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="scaling" class="section">
+      <h2 class="reveal">Accuracy as the context grows</h2>
+      <p class="sub reveal">Each point is the mean over 6 questions (2 at 2M); one question moves a point by ~0.17.
+        Direct LLM can't run at 2M (Haiku reads at most 1M tokens).</p>
+      <div class="seg reveal" role="tablist" id="tierSeg">
+        <button role="tab" data-tier="T1">T1 lookup</button>
+        <button role="tab" data-tier="T2" aria-selected="true">T2 aggregation</button>
+        <button role="tab" data-tier="T3">T3 pairwise</button>
+      </div>
+      <div class="chart-card reveal"><canvas id="sizeChart" aria-label="Mean score by context size per method"></canvas></div>
+      <details class="table-view reveal"><summary>Show as table</summary><div id="sizeTable"></div></details>
+    </section>
+
+    <section id="cost" class="section">
+      <h2 class="reveal">Cost vs accuracy</h2>
+      <p class="sub reveal">Accuracy on the hard questions (T2 + T3) against the median cost per question, log scale.
+        Top-left is best: cheap and accurate.</p>
+      <div class="chart-card reveal"><canvas id="costChart" aria-label="Median cost versus accuracy per method"></canvas></div>
+    </section>
+
+    <section id="trajectory" class="section">
+      <h2 class="reveal">Inside an RLM run</h2>
+      <p class="sub reveal">Pick a run and step through what Claude wrote, what Python printed, and each helper call.</p>
+      <div class="pickers reveal">
+        <label>Method <select id="pMethod"></select></label>
+        <label>Context <select id="pSize"></select></label>
+        <label>Question <select id="pQuestion"></select></label>
+      </div>
+      <div id="traceHead" class="trace-head reveal"></div>
+      <ol id="trace" class="trace"></ol>
+    </section>
+
+    <section id="findings" class="section">
+      <h2 class="reveal">What we learned</h2>
+      <div class="cards findings">
+        <article class="card reveal"><h3>Find one thing → RAG</h3><p>On lookups RAG-BM25 scores 0.90, as good as anything, at the lowest cost per question.</p></article>
+        <article class="card reveal"><h3>Count or compare → RLM</h3><p>RAG scores ≤ 0.10 on aggregation and ≤ 0.07 on pairs. RLM depth 1: 0.60 and 0.84.</p></article>
+        <article class="card reveal"><h3>Long context isn't enough</h3><p>Direct LLM sees every record yet scores 0.15 on aggregation and falls to 0 at 512K.</p></article>
+        <article class="card reveal"><h3>Depth 1 is the sweet spot</h3><p>Depth 2 matched depth 1 (0.77 vs 0.76 on the same questions) at ~10× the cost and ~13× the time.</p></article>
+      </div>
+      <p class="limits reveal"><b>Limitations.</b> One model and one run per question; 6 questions per cell. The answer key is LLM-labeled and
+        checked by a 200-review human audit (93.0% agreement). E-commerce last-mile delivery, not freight logistics.</p>
+    </section>
+  </main>
+
+  <footer>
+    <p>Built from scratch: data, benchmark, RAG, RLM and analysis ·
+      <a href="https://github.com/Prerna-02/rlm-vs-rag-logistics">GitHub repository</a> ·
+      Method from <a href="https://arxiv.org/abs/2512.24601">Recursive Language Models</a> (Zhang, Kraska &amp; Khattab).</p>
+    <p class="small">Data: <a href="https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce">Brazilian E-Commerce Public Dataset by Olist</a>,
+      CC BY-NC-SA 4.0. Review excerpts appear in the trajectories.</p>
+  </footer>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
