@@ -1,0 +1,16 @@
+[
+ {
+  "step": 0,
+  "response": "```repl\nimport re\nm = [l for l in context.split('\\n') if l.startswith('[O80609]') or 'O80609' in l[:20]]\nprint(m)\n```",
+  "outputs": [
+   "['[order O80609] seller=S1299 (PR/pinhalao) customer=RS/rio grande category=housewares purchased=2018-05-14 estimated=2018-06-06 delivered=2018-06-05 (1 days early) review=4/5 \"Muito bom produto. Entrega demorou em razão da greve dos caminhoneiros.\"']\n"
+  ],
+  "sub_calls": []
+ },
+ {
+  "step": 1,
+  "response": "Only one part of this review is a complaint, and it is about delivery: \"Entrega demorou em razão da greve dos caminhoneiros\" (the delivery took long because of the truckers' strike). The rest is praise for the product. The record's delivered date is one day early, but the customer's text still describes a slow delivery, so I'm treating the delay as the main complaint.\n\nFINAL(delivery)",
+  "outputs": [],
+  "sub_calls": []
+ }
+]

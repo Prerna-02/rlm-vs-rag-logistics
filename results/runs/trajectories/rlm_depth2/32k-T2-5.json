@@ -1,0 +1,190 @@
+[
+ {
+  "step": 0,
+  "response": "\n<repl\nprint(context[:1500])\nimport re\nlines=context.strip().split('\\n')\nprint(len(lines))\nprint(lines[0])\nprint(lines[5])\n</invoke>\n",
+  "outputs": [],
+  "sub_calls": []
+ },
+ {
+  "step": 1,
+  "response": "```repl\nprint(context[:1500])\nlines=context.strip().split('\\n')\nprint(len(lines))\nprint(lines[0])\nprint(lines[5])\n```",
+  "outputs": [
+   "[order O58113] seller=S1642 (SC/blumenau) customer=SP/valinhos category=computers_accessories purchased=2018-02-21 estimated=2018-03-16 delivered=2018-03-09 (7 days early) review=3/5 \"Satisfeito\"\n[order O29877] seller=S0911 (SP/jacarei) customer=ES/vila velha category=electronics purchased=2018-01-16 estimated=2018-02-09 delivered=2018-02-17 (8 days late) review=1/5 \"Alem do prazo de entrega bem extenso a mercadoria ainda encontra-se retida, sem atualização, completando hoje exatamente 30 dias que comprei a mercadoria.\"\n[order O68116] seller=S2852 (PR/curitiba) customer=SP/sao paulo category=garden_tools purchased=2018-03-27 estimated=2018-04-18 delivered=2018-03-31 (18 days early) review=5/5 \"otimo\"\n[order O12336] seller=S1324 (PR/rolandia) customer=ES/vitoria category=computers_accessories purchased=2018-02-11 estimated=2018-03-28 delivered=2018-02-26 (30 days early) review=1/5 \"Comprei um produto e recebi outro. A targaryen não apresenta solução para o problema. Precisei fazer reclamação no site reclame aqui, mas ainda não obtive retorno. targaryene: sinônimo de aborrecimento.\"\n[order O83462] seller=S2524 (SP/piracicaba) customer=SP/varzea paulista category=bed_bath_table purchased=2017-11-04 estimated=2017-11-27 delivered=2017-11-13 (14 days early) review=5/5 \"Produto bom. Entrega antes do prazo\"\n[order O29553] seller=S0625 (SP/dracena) customer=SP/sao paulo category=consoles_games purchased=2017-12-22 estimated=2018-01-18 delivered=2018-01-11 (7 days early) review=5/5 \"R\n269\n[order O58113] seller=S1642 (SC/blumenau) customer=SP/valinhos category=computers_accessories purchased=2018-02-21 estimated=2018-03-16 delivered=2018-03-09 (7 days early) review=3/5 \"Satisfeito\"\n[order O29553] seller=S0625 (SP/dracena) customer=SP/sao paulo category=consoles_games purchased=2017-12-22 estimated=2018-01-18 delivered=2018-01-11 (7 days early) review=5/5 \"Recebi antes do prazo...o produto é de excelente qualidade!\"\n"
+  ],
+  "sub_calls": []
+ },
+ {
+  "step": 2,
+  "response": "I'll parse each record to get the seller and customer states, then keep only the cross-state orders.\n\n```repl\nimport re\npat = re.compile(r'seller=(\\S+) \\((\\w+)/([^)]*)\\) customer=(\\w+)/(\\S[^ ]*(?: [^ c][^ ]*)*?) category=')\nrows=[]\nbad=0\nfor ln in lines:\n    m = re.search(r'seller=\\S+ \\((\\w+)/[^)]*\\) customer=(\\w+)/', ln)\n    if not m:\n        bad+=1; continue\n    rev = re.search(r'review=(\\d)/5 \"(.*)\"\\s*$', ln)\n    rows.append((ln, m.group(1), m.group(2), rev.group(1) if rev else None, rev.group(2) if rev else None))\ncross=[r for r in rows if r[1]!=r[2]]\nprint(len(rows), bad, len(cross))\nprint(sum(1 for r in rows if r[3] is None))\n```\n\n\n```repl\nfor r in cross[:3]: print(r[0][:300])\n```",
+  "outputs": [
+   "269 0 168\n0\n",
+   "[order O58113] seller=S1642 (SC/blumenau) customer=SP/valinhos category=computers_accessories purchased=2018-02-21 estimated=2018-03-16 delivered=2018-03-09 (7 days early) review=3/5 \"Satisfeito\"\n[order O29877] seller=S0911 (SP/jacarei) customer=ES/vila velha category=electronics purchased=2018-01-16 estimated=2018-02-09 delivered=2018-02-17 (8 days late) review=1/5 \"Alem do prazo de entrega bem extenso a mercadoria ainda encontra-se retida, sem atualização, completando hoje exatamente 30 di\n[order O68116] seller=S2852 (PR/curitiba) customer=SP/sao paulo category=garden_tools purchased=2018-03-27 estimated=2018-04-18 delivered=2018-03-31 (18 days early) review=5/5 \"otimo\"\n"
+  ],
+  "sub_calls": []
+ },
+ {
+  "step": 3,
+  "response": "I have 168 cross-state orders. Next I'll have the language model label each review's comment with the complaint code, in chunks.\n\n```repl\ninstr = \"\"\"Classify each order review comment (Portuguese) into one code:\nd = delivery complaint (late, slow, lost, not received, damaged in transit)\np = product complaint (quality, defect, wrong size/colour, not as described, broke)\ns = seller complaint (communication, refund, cancellation, wrong or missing items sent, invoice)\ng = positive/satisfied, no real complaint\no = other, vague, or price/shipping cost complaint\nRules: never arrived -> d. Wrong item/missing item -> s. Arrived broken/defective -> p. Neutral satisfied -> g. Price/shipping cost -> o. If several complaints, pick the one stressed most.\nAnswer with one line per record in the format: N:CODE  (nothing else).\"\"\"\nitems=[]\nfor i,r in enumerate(cross):\n    ln=r[0]\n    m=re.search(r'delivered=\\S+ \\(([^)]*)\\)', ln)\n    comment=r[4] if r[4] is not None else ''\n    items.append(f\"{i}: status=({m.group(1) if m else ''}) comment=\\\"{comment}\\\"\")\nlabels={}\nfor start in range(0,len(items),42):\n    chunk=\"\\n\".join(items[start:start+42])\n    out=llm_query(instr+\"\\n\\n\"+chunk)\n    for mm in re.finditer(r'(\\d+)\\s*:\\s*([dpsgo])\\b', out):\n        labels[int(mm.group(1))]=mm.group(2)\nprint(len(labels))\nfrom collections import Counter\nprint(Counter(labels.values()))\n```\n\n\n<br>",
+  "outputs": [
+   "42\nCounter({'g': 22, 'p': 7, 'd': 6, 's': 5, 'o': 2})\n"
+  ],
+  "sub_calls": [
+   {
+    "prompt_chars": 5435,
+    "reply": "ANSWER: ",
+    "cost": 0.0101629
+   },
+   {
+    "prompt_chars": 4882,
+    "reply": "ANSWER: ",
+    "cost": 0.009326899999999999
+   },
+   {
+    "prompt_chars": 5571,
+    "reply": "ANSWER: ",
+    "cost": 0.0108923
+   },
+   {
+    "prompt_chars": 5650,
+    "reply": "ANSWER: 126:g\n127:g\n128:d\n129:s\n130:g\n131:g\n132:g\n133:o\n134:d\n135:g\n136:s\n137:g\n138:g\n139:g\n140:d\n141:p\n142:p\n143:p\n144:p\n145:d\n146:g\n147:g\n148:g\n149:o\n150:s\n151:g\n152:g\n153:s\n154:g\n155:d\n156:p\n157:g\n158:s\n159:p\n160:g\n161:g\n162:g\n163:g\n164:p\n165:d\n166:g\n167:g",
+    "cost": 0.0029202000000000004
+   }
+  ]
+ },
+ {
+  "step": 4,
+  "response": "The label count is 42, not 168, so most chunks did not parse. I'll check the raw LLM output for the later chunks before going further.\n\n```repl\ntest_out = llm_query(instr+\"\\n\\n\"+\"\\n\".join(items[42:45]))\nprint(test_out[:500])\nprint(items[42:44])\n```",
+  "outputs": [
+   "42:g\n43:p\n44:g\n['42: status=(18 days early) comment=\"produto entregue antes do prazo\"', '43: status=(6 days early) comment=\"O produto veio com defeito\"']\n"
+  ],
+  "sub_calls": [
+   {
+    "prompt_chars": 849,
+    "reply": "ANSWER: 42:g\n43:p\n44:g",
+    "cost": 0.0036684000000000005
+   }
+  ]
+ },
+ {
+  "step": 5,
+  "response": "The first run labelled only 42 of the 168 cross-state orders, so I'll rerun the labelling in chunks and check each chunk's output.\n\n```repl\nlabels={}\nfor start in range(0,len(items),42):\n    chunk=\"\\n\".join(items[start:start+42])\n    out=llm_query(instr+\"\\n\\n\"+chunk)\n    got=0\n    for mm in re.finditer(r'(\\d+)\\s*:\\s*([dpsgo])\\b', out):\n        labels[int(mm.group(1))]=mm.group(2); got+=1\n    print(start, got, len(out))\nprint(len(labels), Counter(labels.values()))\n```",
+  "outputs": [
+   "0 0 0\n42 42 252\n84 42 235\n126 42 251\n126 Counter({'g': 69, 'd': 18, 's': 17, 'p': 16, 'o': 6})\n"
+  ],
+  "sub_calls": [
+   {
+    "prompt_chars": 5435,
+    "reply": "ANSWER: ",
+    "cost": 0.0067747
+   },
+   {
+    "prompt_chars": 4882,
+    "reply": "ANSWER: \"42:g\\n43:p\\n44:g\\n45:g\\n46:p\\n47:g\\n48:g\\n49:g\\n50:s\\n51:s\\n52:g\\n53:s\\n54:g\\n55:s\\n56:p\\n57:g\\n58:d\\n59:d\\n60:g\\n61:g\\n62:g\\n63:s\\n64:o\\n65:g\\n66:p\\n67:g\\n68:g\\n69:g\\n70:o\\n71:g\\n72:g\\n73:g\\n74:g\\n75:g\\n76:d\\n77:d\\n78:g\\n79:g\\n80:g\\n81:g\\n82:g\\n83:d\"",
+    "cost": 0.001705
+   },
+   {
+    "prompt_chars": 5571,
+    "reply": "ANSWER: 84:p\n85:p\n86:g\n87:s\n88:p\n89:d\n90:g\n91:g\n92:s\n93:o\n94:s\n95:g\n96:g\n97:g\n98:d\n99:s\n100:d\n101:g\n102:g\n103:g\n104:d\n105:g\n106:g\n107:g\n108:g\n109:s\n110:s\n111:g\n112:p\n113:p\n114:g\n115:o\n116:d\n117:d\n118:d\n119:g\n120:g\n121:s\n122:g\n123:g\n124:g\n125:g",
+    "cost": 0.0061239
+   },
+   {
+    "prompt_chars": 5650,
+    "reply": "ANSWER: 126:g\n127:g\n128:d\n129:s\n130:g\n131:g\n132:g\n133:o\n134:d\n135:g\n136:s\n137:g\n138:g\n139:g\n140:d\n141:p\n142:p\n143:p\n144:p\n145:d\n146:g\n147:g\n148:g\n149:o\n150:s\n151:g\n152:g\n153:s\n154:g\n155:d\n156:p\n157:g\n158:s\n159:p\n160:g\n161:g\n162:g\n163:g\n164:p\n165:d\n166:g\n167:g",
+    "cost": 0.0046437
+   }
+  ]
+ },
+ {
+  "step": 6,
+  "response": "The first chunk (indices 0–41) returned empty output, so 42 labels are still missing. I'll rerun that chunk.\n\n```repl\nout=llm_query(instr+\"\\n\\n\"+\"\\n\".join(items[0:42]))\ngot=0\nfor mm in re.finditer(r'(\\d+)\\s*:\\s*([dpsgo])\\b', out):\n    labels[int(mm.group(1))]=mm.group(2); got+=1\nprint(got, len(labels))\nif len(labels)==len(cross):\n    dl=sum(1 for i in range(len(cross)) if labels[i]=='d')\n    print(dl, len(cross), round(100*dl/len(cross),1))\n```",
+  "outputs": [
+   "0 126\n"
+  ],
+  "sub_calls": [
+   {
+    "prompt_chars": 5435,
+    "reply": "ANSWER: ",
+    "cost": 0.010528399999999999
+   }
+  ]
+ },
+ {
+  "step": 7,
+  "response": "The first chunk (items 0–41) came back empty again, so I'll retry it in smaller pieces.\n\n```repl\nmissing=[i for i in range(len(cross)) if i not in labels]\nprint(len(missing))\nfor start in range(0,len(missing),14):\n    idxs=missing[start:start+14]\n    chunk=\"\\n\".join(items[i] for i in idxs)\n    for attempt in range(3):\n        out=llm_query(instr+\"\\n\\n\"+chunk)\n        hits=[(int(mm.group(1)),mm.group(2)) for mm in re.finditer(r'(\\d+)\\s*:\\s*([dpsgo])\\b', out)]\n        hits=[h for h in hits if h[0] in idxs]\n        if len(hits)==len(idxs):\n            break\n    for k,v in hits: labels[k]=v\nprint(len(labels))\nif len(labels)==len(cross):\n    dl=sum(1 for i in range(len(cross)) if labels[i]=='d')\n    print(dl, len(cross), round(100*dl/len(cross),1))\n```",
+  "outputs": [
+   "42\n154\n"
+  ],
+  "sub_calls": [
+   {
+    "prompt_chars": 2461,
+    "reply": "ANSWER: ",
+    "cost": 0.0053981
+   },
+   {
+    "prompt_chars": 2461,
+    "reply": "ANSWER: 0:g\n1:d\n2:g\n3:s\n4:d\n5:d\n6:s\n7:g\n8:g\n9:g\n10:g\n11:g\n12:p\n13:g",
+    "cost": 0.002702
+   },
+   {
+    "prompt_chars": 2144,
+    "reply": "ANSWER: ",
+    "cost": 0.0069513000000000005
+   },
+   {
+    "prompt_chars": 2144,
+    "reply": "ANSWER: ",
+    "cost": 0.0067834
+   },
+   {
+    "prompt_chars": 2144,
+    "reply": "ANSWER: 14:g\n15:p\n16:g\n17:g\n18:g\n19:g\n20:d\n21:p\n22:s\n23:p\n24:d\n25:g\n26:p\n27:g",
+    "cost": 0.006298700000000001
+   },
+   {
+    "prompt_chars": 2176,
+    "reply": "ANSWER: ",
+    "cost": 0.0069364
+   },
+   {
+    "prompt_chars": 2176,
+    "reply": "ANSWER: ",
+    "cost": 0.007116
+   },
+   {
+    "prompt_chars": 2176,
+    "reply": "ANSWER: ",
+    "cost": 0.0062764
+   }
+  ]
+ },
+ {
+  "step": 8,
+  "response": "Labels now cover 154 of the 168 cross-state orders, so 14 are still missing. I'll retry just those and compute the percentage once all are labelled.\n\n```repl\nfor rnd in range(5):\n    missing=[i for i in range(len(cross)) if i not in labels]\n    if not missing: break\n    for start in range(0,len(missing),7):\n        idxs=missing[start:start+7]\n        chunk=\"\\n\".join(items[i] for i in idxs)\n        for attempt in range(3):\n            out=llm_query(instr+\"\\n\\n\"+chunk)\n            hits=[(int(mm.group(1)),mm.group(2)) for mm in re.finditer(r'(\\d+)\\s*:\\s*([dpsgo])\\b', out)]\n            hits=[h for h in hits if h[0] in idxs]\n            if len(hits)==len(idxs): break\n        for k,v in hits: labels[k]=v\nprint(\"labelled\", len(labels), \"of\", len(cross))\nif len(labels)==len(cross):\n    dl=sum(1 for i in range(len(cross)) if labels[i]=='d')\n    print(dl, len(cross), round(100*dl/len(cross),1))\n```",
+  "outputs": [
+   "labelled 168 of 168\n24 168 14.3\n"
+  ],
+  "sub_calls": [
+   {
+    "prompt_chars": 1461,
+    "reply": "ANSWER: ",
+    "cost": 0.008202300000000001
+   },
+   {
+    "prompt_chars": 1461,
+    "reply": "ANSWER: 28:s\n29:g\n30:o\n31:g\n32:g\n33:g\n34:g",
+    "cost": 0.0028636000000000004
+   },
+   {
+    "prompt_chars": 1388,
+    "reply": "ANSWER: 35:p\n36:g\n37:g\n38:d\n39:g\n40:p\n41:g",
+    "cost": 0.0049276
+   }
+  ]
+ },
+ {
+  "step": 9,
+  "response": "Of the 168 orders where seller and customer are in different states, 24 have a delivery complaint, which is 14.3%.\n\nThe labels came from the language model, not from a rule. Some chunks returned empty output and had to be retried, and the final run labelled all 168 orders.\n\nFINAL(14.3)",
+  "outputs": [],
+  "sub_calls": []
+ }
+]

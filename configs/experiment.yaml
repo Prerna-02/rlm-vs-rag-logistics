@@ -11,3 +11,14 @@ rlm:
   max_sub_calls: 60
   code_timeout_s: 60          # per executed code block
   output_chars: 4000          # REPL output shown back to the root model
+
+# Phase 5 grid, run in this order (cheapest first). sizes: which contexts; tiers / per_tier: optional subsets.
+# Direct LLM cannot run at 2M (Haiku reads at most 1M tokens) and is costly at 512K, so 512K gets 1 question per tier.
+grid:
+  - {method: rag_bm25,   sizes: [32k, 128k, 512k, 2m]}
+  - {method: rag_hybrid, sizes: [32k, 128k, 512k, 2m]}
+  - {method: rlm_depth0, sizes: [32k, 128k, 512k, 2m]}
+  - {method: rlm_depth1, sizes: [32k, 128k, 512k, 2m]}
+  - {method: direct_llm, sizes: [32k, 128k]}
+  - {method: direct_llm, sizes: [512k], per_tier: 1}   # moved before depth 2 mid-run so the budget covers it
+  - {method: rlm_depth2, sizes: [32k, 128k], tiers: [T2, T3]}

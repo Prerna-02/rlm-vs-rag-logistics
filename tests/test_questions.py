@@ -20,8 +20,8 @@ def test_t2_percentage():
     ctx = pd.DataFrame({"days_late": [3, 5, -1, 0], "review_score": [1, 2, 5, 4], "category": ["c"] * 4,
                         "customer_state": ["SP"] * 4, "seller_state": ["SP"] * 4,
                         "label": ["delivery", "product", "positive", "product"]})
-    question, answer, kind = t2(ctx, 1)[0]
-    assert "after the estimated date" in question and answer == 50.0 and kind == "number"
+    question, answer, kind, n = t2(ctx, 1)[0]
+    assert "after the estimated date" in question and answer == 50.0 and kind == "number" and n == 2
 
 
 def test_parse_compact_codes_skips_bad_numbers():

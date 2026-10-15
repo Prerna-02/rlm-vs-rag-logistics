@@ -1,0 +1,16 @@
+[
+ {
+  "step": 0,
+  "response": "<invoke name=\"none\">\n</invoke>\n```repl\nimport re\nlines = context.split(\"\\n\")\nfor l in lines:\n    if \"O29877\" in l:\n        print(l)\n```\n\n\n<invoke name=\"none\">\n</invoke>\n",
+  "outputs": [
+   "[order O29877] seller=S0911 (SP/jacarei) customer=ES/vila velha category=electronics purchased=2018-01-16 estimated=2018-02-09 delivered=2018-02-17 (8 days late) review=1/5 \"Alem do prazo de entrega bem extenso a mercadoria ainda encontra-se retida, sem atualização, completando hoje exatamente 30 dias que comprei a mercadoria.\"\n"
+  ],
+  "sub_calls": []
+ },
+ {
+  "step": 1,
+  "response": "The record for O29877 is in the output above. The customer says the delivery took too long and the merchandise is still held, with no update after 30 days. That is a delivery complaint (late or not received), so under rule 1 the label is delivery.\n\nFINAL(delivery)",
+  "outputs": [],
+  "sub_calls": []
+ }
+]

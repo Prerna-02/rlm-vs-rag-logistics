@@ -1,0 +1,16 @@
+[
+ {
+  "step": 0,
+  "response": "<invoke name=\"none\">\n</invoke>\n```repl\nimport re\nm = [l for l in context.split('\\n') if l.startswith('[O01236]') or 'O01236' in l[:20]]\nprint(m)\n```",
+  "outputs": [
+   "['[order O01236] seller=S2424 (SP/mogi guacu) customer=RJ/rio de janeiro category=luggage_accessories purchased=2017-11-10 estimated=2017-12-04 delivered=2017-11-21 (13 days early) review=5/5 \"A cor é muito diferente da foto. É uma ótima mala pequena.\"']\n"
+  ],
+  "sub_calls": []
+ },
+ {
+  "step": 1,
+  "response": "The review for O01236 says the colour is very different from the photo, though the customer calls it a great small suitcase. A colour mismatch with the listing is a product complaint (not as described), so that is the main complaint.\n\nFINAL(product)",
+  "outputs": [],
+  "sub_calls": []
+ }
+]

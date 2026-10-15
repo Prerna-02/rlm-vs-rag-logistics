@@ -1,0 +1,22 @@
+[
+ {
+  "step": 0,
+  "response": "<parameter name=\"code\">import re\nm = [l for l in context.split('\\n') if l.startswith('[O52262]') or 'O52262' in l[:30]]\nprint(m)</parameter>\n</invoke>\n",
+  "outputs": [],
+  "sub_calls": []
+ },
+ {
+  "step": 1,
+  "response": "```repl\nimport re\nm = [l for l in context.split('\\n') if 'O52262' in l]\nprint(m)\n```",
+  "outputs": [
+   "['[order O52262] seller=S1070 (RJ/rio de janeiro) customer=SP/sao paulo category=housewares purchased=2017-11-28 estimated=2017-12-18 delivered=2017-12-27 (9 days late) review=1/5 \"Ainda não recebi este produto,\"']\n"
+  ],
+  "sub_calls": []
+ },
+ {
+  "step": 2,
+  "response": "The review says \"Ainda não recebi este produto\" (\"I still haven't received this product\"), and the order was delivered 9 days late. This is a never-received complaint, which rule 1 maps to delivery.\n\nFINAL(delivery)",
+  "outputs": [],
+  "sub_calls": []
+ }
+]

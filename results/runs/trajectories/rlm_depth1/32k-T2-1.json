@@ -1,0 +1,70 @@
+[
+ {
+  "step": 0,
+  "response": "\n<repr*/\n```repl\nprint(context[:1500])\n```\n\n\n<repr\nprint(context[:1500])\n```\n\n\n<repr\nprint(context[:1500])\n```\n\n\n<repr*/\n```repl\nprint(context[:1500])\n```\n\n\n<repr",
+  "outputs": [
+   "[order O58113] seller=S1642 (SC/blumenau) customer=SP/valinhos category=computers_accessories purchased=2018-02-21 estimated=2018-03-16 delivered=2018-03-09 (7 days early) review=3/5 \"Satisfeito\"\n[order O29877] seller=S0911 (SP/jacarei) customer=ES/vila velha category=electronics purchased=2018-01-16 estimated=2018-02-09 delivered=2018-02-17 (8 days late) review=1/5 \"Alem do prazo de entrega bem extenso a mercadoria ainda encontra-se retida, sem atualização, completando hoje exatamente 30 dias que comprei a mercadoria.\"\n[order O68116] seller=S2852 (PR/curitiba) customer=SP/sao paulo category=garden_tools purchased=2018-03-27 estimated=2018-04-18 delivered=2018-03-31 (18 days early) review=5/5 \"otimo\"\n[order O12336] seller=S1324 (PR/rolandia) customer=ES/vitoria category=computers_accessories purchased=2018-02-11 estimated=2018-03-28 delivered=2018-02-26 (30 days early) review=1/5 \"Comprei um produto e recebi outro. A targaryen não apresenta solução para o problema. Precisei fazer reclamação no site reclame aqui, mas ainda não obtive retorno. targaryene: sinônimo de aborrecimento.\"\n[order O83462] seller=S2524 (SP/piracicaba) customer=SP/varzea paulista category=bed_bath_table purchased=2017-11-04 estimated=2017-11-27 delivered=2017-11-13 (14 days early) review=5/5 \"Produto bom. Entrega antes do prazo\"\n[order O29553] seller=S0625 (SP/dracena) customer=SP/sao paulo category=consoles_games purchased=2017-12-22 estimated=2018-01-18 delivered=2018-01-11 (7 days early) review=5/5 \"R\n",
+   "[order O58113] seller=S1642 (SC/blumenau) customer=SP/valinhos category=computers_accessories purchased=2018-02-21 estimated=2018-03-16 delivered=2018-03-09 (7 days early) review=3/5 \"Satisfeito\"\n[order O29877] seller=S0911 (SP/jacarei) customer=ES/vila velha category=electronics purchased=2018-01-16 estimated=2018-02-09 delivered=2018-02-17 (8 days late) review=1/5 \"Alem do prazo de entrega bem extenso a mercadoria ainda encontra-se retida, sem atualização, completando hoje exatamente 30 dias que comprei a mercadoria.\"\n[order O68116] seller=S2852 (PR/curitiba) customer=SP/sao paulo category=garden_tools purchased=2018-03-27 estimated=2018-04-18 delivered=2018-03-31 (18 days early) review=5/5 \"otimo\"\n[order O12336] seller=S1324 (PR/rolandia) customer=ES/vitoria category=computers_accessories purchased=2018-02-11 estimated=2018-03-28 delivered=2018-02-26 (30 days early) review=1/5 \"Comprei um produto e recebi outro. A targaryen não apresenta solução para o problema. Precisei fazer reclamação no site reclame aqui, mas ainda não obtive retorno. targaryene: sinônimo de aborrecimento.\"\n[order O83462] seller=S2524 (SP/piracicaba) customer=SP/varzea paulista category=bed_bath_table purchased=2017-11-04 estimated=2017-11-27 delivered=2017-11-13 (14 days early) review=5/5 \"Produto bom. Entrega antes do prazo\"\n[order O29553] seller=S0625 (SP/dracena) customer=SP/sao paulo category=consoles_games purchased=2017-12-22 estimated=2018-01-18 delivered=2018-01-11 (7 days early) review=5/5 \"R\n"
+  ],
+  "sub_calls": []
+ },
+ {
+  "step": 1,
+  "response": "I'll parse each record, keep the orders delivered on or before the estimated date, and check the date and review formats before classifying anything.\n\n```repl\nimport re\nlines = [l for l in context.split('\\n') if l.strip()]\nrecs = []\nfor l in lines:\n    m_est = re.search(r'estimated=(\\d{4}-\\d{2}-\\d{2})', l)\n    m_del = re.search(r'delivered=(\\d{4}-\\d{2}-\\d{2}|\\S+)', l)\n    m_rev = re.search(r'review=(\\d)/5 \"(.*)\"', l)\n    recs.append((l, m_est and m_est.group(1), m_del and m_del.group(1), m_rev and m_rev.group(2)))\nprint(len(lines))\nprint(sum(1 for r in recs if r[1] is None or r[2] is None or r[3] is None))\nprint([r[0][:200] for r in recs if r[2] is None or not re.match(r'\\d{4}-', r[2] or '')][:5])\n```",
+  "outputs": [
+   "269\n0\n[]\n"
+  ],
+  "sub_calls": []
+ },
+ {
+  "step": 2,
+  "response": "\n<repl\n<repl\nimport re\nrecs2=[]\nfor l in lines:\n    est=re.search(r'estimated=(\\d{4}-\\d{2}-\\d{2})',l).group(1)\n    dl=re.search(r'delivered=(\\d{4}-\\d{2}-\\d{2})',l).group(1)\n    rv=re.search(r'review=(\\d)/5 \"(.*)\"',l)\n    recs2.append(dict(line=l,est=est,dl=dl,score=rv.group(1),text=rv.group(2),ok=dl<=est))\nontime=[r for r in recs2 if r['ok']]\nprint(len(ontime), len(recs2))\nfor i in range(0,len(ontime),45):\n    chunk=ontime[i:i+45]\n    prompt=\"Classify each Portuguese review comment as one letter: d (delivery complaint), p (product complaint: quality, defect, wrong/not as described, broke), s (seller service: communication, refund, cancellation, wrong or missing items sent), g (positive/satisfied, no real complaint), o (other/vague/price/shipping cost). Answer one line per item in the form '<number>: <letter>'.\\n\\n\"\n    prompt+=\"\\n\".join(f\"{j+1}. {r['text']}\" for j,r in enumerate(chunk))\n    print(llm_query(prompt))\n    print('---')\n```",
+  "outputs": [],
+  "sub_calls": []
+ },
+ {
+  "step": 3,
+  "response": "The earlier replies were malformed, so I'll redo the parsing in one clean block. The plan is to keep orders delivered on or before the estimated date, have the LLM label each review comment, and count the product (p) labels.\n\n```repl\nimport re\nlines = [l for l in context.split('\\n') if l.strip()]\nrecs = []\nfor l in lines:\n    est = re.search(r'estimated=(\\d{4}-\\d{2}-\\d{2})', l).group(1)\n    dl = re.search(r'delivered=(\\d{4}-\\d{2}-\\d{2})', l).group(1)\n    rv = re.search(r'review=(\\d)/5 \"(.*)\"', l)\n    recs.append(dict(line=l, est=est, dl=dl, score=rv.group(1), text=rv.group(2), ok=dl <= est))\nontime = [r for r in recs if r['ok']]\nprint(len(ontime), len(recs))\nlabels = {}\nfor i in range(0, len(ontime), 45):\n    chunk = ontime[i:i+45]\n    prompt = (\"Classify each Portuguese review comment as one letter: d (delivery complaint: late, not received, damaged in transit), \"\n              \"p (product complaint: quality, defect, broken, wrong size/colour, not as described), \"\n              \"s (seller service: communication, refund, cancellation, wrong or missing items sent, invoice), \"\n              \"g (positive/satisfied, no real complaint), o (other/vague/price/shipping cost). \"\n              \"Answer one line per item in the form '<number>: <letter>'.\\n\\n\")\n    prompt += \"\\n\".join(f\"{j+1}. {r['text']}\" for j, r in enumerate(chunk))\n    out = llm_query(prompt)\n    for line in out.split('\\n'):\n        m = re.match(r'\\s*(\\d+)\\s*[:.)-]\\s*([dpsgo])', line)\n        if m:\n            idx = i + int(m.group(1)) - 1\n            if 0 <= idx < len(ontime):\n                labels[idx] = m.group(2)\ncnt = {}\nfor k, v in labels.items():\n    cnt[v] = cnt.get(v, 0) + 1\nprint(len(labels), cnt)\npc = cnt.get('p', 0)\nprint(round(100 * pc / len(ontime), 1))\n```",
+  "outputs": [
+   "240 269\n240 {'g': 157, 's': 25, 'o': 12, 'p': 32, 'd': 14}\n13.3\n"
+  ],
+  "sub_calls": [
+   {
+    "prompt_chars": 3778,
+    "reply": "1: g\n2: g\n3: s\n4: g\n5: g\n6: g\n7: g\n8: s\n9: g\n10: o\n11: g\n12: g\n13: g\n14: g\n15: g\n16: g\n17: g\n18: g\n19: g\n20: o\n21: s\n22: g\n23: g\n24: p\n25: g\n26: g\n27: g\n28: g\n29: g\n30: p\n31: g\n32: g\n33: g\n34: g\n35: g\n36: d\n37: p\n38: s\n39: s\n40: p\n41: g\n42: g\n43: p\n44: g\n45: p",
+    "cost": 0.0008598
+   },
+   {
+    "prompt_chars": 3530,
+    "reply": "1: g\n2: s\n3: g\n4: g\n5: g\n6: p\n7: g\n8: g\n9: g\n10: o\n11: g\n12: g\n13: p\n14: s\n15: g\n16: g\n17: g\n18: g\n19: g\n20: p\n21: g\n22: g\n23: p\n24: s\n25: g\n26: g\n27: g\n28: p\n29: g\n30: g\n31: p\n32: o\n33: g\n34: g\n35: g\n36: s\n37: g\n38: g\n39: g\n40: g\n41: s\n42: g\n43: g\n44: s\n45: d",
+    "cost": 0.0007657
+   },
+   {
+    "prompt_chars": 3504,
+    "reply": "1: g\n2: d\n3: g\n4: g\n5: g\n6: g\n7: g\n8: g\n9: s\n10: g\n11: p\n12: g\n13: o\n14: g\n15: p\n16: g\n17: o\n18: g\n19: g\n20: d\n21: g\n22: o\n23: g\n24: g\n25: g\n26: g\n27: g\n28: d\n29: s\n30: g\n31: g\n32: g\n33: g\n34: g\n35: g\n36: g\n37: g\n38: p\n39: p\n40: g\n41: p\n42: s\n43: d\n44: s\n45: g",
+    "cost": 0.0008259
+   },
+   {
+    "prompt_chars": 3693,
+    "reply": "1: g\n2: g\n3: p\n4: g\n5: s\n6: g\n7: g\n8: g\n9: d\n10: p\n11: g\n12: d\n13: g\n14: g\n15: g\n16: g\n17: g\n18: g\n19: g\n20: g\n21: o\n22: g\n23: g\n24: s\n25: s\n26: p\n27: g\n28: g\n29: d\n30: p\n31: s\n32: g\n33: o\n34: d\n35: d\n36: p\n37: g\n38: g\n39: g\n40: p\n41: g\n42: g\n43: d\n44: g\n45: g",
+    "cost": 0.0007655
+   },
+   {
+    "prompt_chars": 3448,
+    "reply": "1: g\n2: g\n3: g\n4: g\n5: p\n6: s\n7: g\n8: g\n9: g\n10: g\n11: o\n12: g\n13: s\n14: g\n15: g\n16: g\n17: g\n18: g\n19: g\n20: p\n21: p\n22: g\n23: p\n24: g\n25: p\n26: g\n27: g\n28: g\n29: g\n30: g\n31: p\n32: o\n33: g\n34: s\n35: g\n36: g\n37: s\n38: g\n39: g\n40: g\n41: g\n42: o\n43: p\n44: g\n45: g",
+    "cost": 0.00046760000000000004
+   },
+   {
+    "prompt_chars": 1678,
+    "reply": "1: g\n2: g\n3: s\n4: d\n5: p\n6: g\n7: g\n8: s\n9: g\n10: g\n11: g\n12: p\n13: d\n14: g\n15: g",
+    "cost": 0.000334
+   }
+  ]
+ },
+ {
+  "step": 4,
+  "response": "The classification finished: 240 of the 269 orders were delivered on or before the estimated date, and all 240 reviews were labelled. Of those, 32 are product complaints (p), and 32 / 240 × 100 = 13.3%.\n\nFINAL(13.3)",
+  "outputs": [],
+  "sub_calls": []
+ }
+]
